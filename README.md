@@ -9,6 +9,8 @@ Eine einfache Web-Anwendung zum Tracken der Zeit seit der letzten Mahlzeit.
 - ✅ **Bearbeiten**: Passen Sie die Zeit Ihrer letzten Mahlzeit nachträglich an
 - ✅ **Mahlzeiten-Historie**: Vollständige Übersicht aller aufgezeichneten Mahlzeiten
 - ✅ **LocalStorage**: Daten bleiben auch nach Browser-Reload erhalten
+- 📱 **PWA-fähig**: Installierbar als App auf iPhone und Android
+- 🔌 **Offline-fähig**: Funktioniert auch ohne Internetverbindung
 
 ## Technologie-Stack
 
@@ -40,6 +42,29 @@ npm run build
 npm run start
 ```
 
+## 📱 Als App auf dem Smartphone installieren
+
+Die Mealtracker-App ist eine Progressive Web App (PWA) und kann wie eine native App installiert werden:
+
+### iPhone (Safari):
+1. Öffnen Sie die App in Safari
+2. Tippen Sie auf das "Teilen"-Symbol (Quadrat mit Pfeil)
+3. Scrollen Sie nach unten und wählen Sie **"Zum Home-Bildschirm"**
+4. Geben Sie einen Namen ein (z.B. "Mealtracker")
+5. Tippen Sie auf **"Hinzufügen"**
+
+### Android (Chrome):
+1. Öffnen Sie die App in Chrome
+2. Tippen Sie auf das Menü (⋮)
+3. Wählen Sie **"App installieren"** oder **"Zum Startbildschirm hinzufügen"**
+4. Bestätigen Sie die Installation
+
+**Vorteile der installierten App:**
+- ✅ Startet wie eine native App (ohne Browser-UI)
+- ✅ Eigenes App-Icon auf dem Home-Screen
+- ✅ Funktioniert offline
+- ✅ Schnellerer Start
+
 ## Azure Deployment
 
 Die Anwendung ist vollständig für Microsoft Azure App Service vorbereitet.
@@ -56,6 +81,10 @@ Die Anwendung ist vollständig für Microsoft Azure App Service vorbereitet.
 ```
 mealtracker/
 ├── client/                 # React Frontend
+│   ├── public/
+│   │   ├── manifest.json  # PWA Manifest
+│   │   ├── sw.js          # Service Worker
+│   │   └── icon-*.png     # App Icons
 │   ├── src/
 │   │   ├── pages/         # Seiten
 │   │   ├── components/    # UI-Komponenten
