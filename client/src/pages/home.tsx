@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Utensils } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Utensils, Pencil } from "lucide-react";
 
 export default function Home() {
   const [lastMealTime, setLastMealTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
 
   useEffect(() => {
     const stored = localStorage.getItem("lastMealTime");
@@ -16,11 +22,15 @@ export default function Home() {
   useEffect(() => {
     if (lastMealTime === null) return;
 
-    const interval = setInterval(() => {
+    const updateElapsed = () => {
       const now = Date.now();
       const elapsed = now - lastMealTime;
       setElapsedTime(elapsed);
-    }, 1000);
+    };
+
+    updateElapsed();
+
+    const interval = setInterval(updateElapsed, 1000);
 
     return () => clearInterval(interval);
   }, [lastMealTime]);
@@ -30,6 +40,27 @@ export default function Home() {
     setLastMealTime(now);
     localStorage.setItem("lastMealTime", now.toString());
     setElapsedTime(0);
+  };
+
+  const handleEditMeal = () => {
+    if (lastMealTime) {
+      const date = new Date(lastMealTime);
+      const dateStr = date.toISOString().split("T")[0];
+      const timeStr = date.toTimeString().split(" ")[0].substring(0, 5);
+      setEditDate(dateStr);
+      setEditTime(timeStr);
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (editDate && editTime) {
+      const dateTimeStr = `${editDate}T${editTime}:00`;
+      const newTime = new Date(dateTimeStr).getTime();
+      setLastMealTime(newTime);
+      localStorage.setItem("lastMealTime", newTime.toString());
+      setIsEditDialogOpen(false);
+    }
   };
 
   const formatTime = (milliseconds: number) => {
@@ -67,20 +98,80 @@ export default function Home() {
         </div>
 
         {lastMealTime !== null && (
-          <div
-            className={`rounded-2xl p-8 md:p-12 text-center transition-all duration-300 border ${
-              isGreen
-                ? "bg-green-500 border-green-600"
-                : "bg-red-500 border-red-600"
-            }`}
-            data-testid="timer-display"
-          >
-            <p className="text-sm font-semibold uppercase tracking-wide text-white mb-4">
-              Zeit seit letzter Mahlzeit
-            </p>
-            <p className="text-5xl md:text-6xl font-bold text-white" data-testid="timer-value">
-              {formatTime(elapsedTime)}
-            </p>
+          <div className="space-y-4">
+            <div
+              className={`rounded-2xl p-8 md:p-12 text-center transition-all duration-300 border ${
+                isGreen
+                  ? "bg-green-500 border-green-600"
+                  : "bg-red-500 border-red-600"
+              }`}
+              data-testid="timer-display"
+            >
+              <p className="text-sm font-semibold uppercase tracking-wide text-white mb-4">
+                Zeit seit letzter Mahlzeit
+              </p>
+              <p className="text-5xl md:text-6xl font-bold text-white" data-testid="timer-value">
+                {formatTime(elapsedTime)}
+              </p>
+            </div>
+
+            <div className="flex justify-center">
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEditMeal}
+                    data-testid="button-edit-meal"
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Letzte Mahlzeit bearbeiten
+                  </Button>
+                </DialogTrigger>
+                <DialogContent data-testid="dialog-edit-meal">
+                  <DialogHeader>
+                    <DialogTitle>Letzte Mahlzeit bearbeiten</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-date">Datum</Label>
+                      <Input
+                        id="edit-date"
+                        type="date"
+                        value={editDate}
+                        onChange={(e) => setEditDate(e.target.value)}
+                        data-testid="input-edit-date"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-time">Uhrzeit</Label>
+                      <Input
+                        id="edit-time"
+                        type="time"
+                        value={editTime}
+                        onChange={(e) => setEditTime(e.target.value)}
+                        data-testid="input-edit-time"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsEditDialogOpen(false)}
+                        data-testid="button-cancel-edit"
+                      >
+                        Abbrechen
+                      </Button>
+                      <Button
+                        onClick={handleSaveEdit}
+                        data-testid="button-save-edit"
+                      >
+                        Speichern
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         )}
 
