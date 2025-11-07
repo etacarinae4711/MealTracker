@@ -3,12 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Utensils, Pencil } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Utensils, Pencil, History } from "lucide-react";
+
+interface MealEntry {
+  timestamp: number;
+  id: string;
+}
 
 export default function Home() {
   const [lastMealTime, setLastMealTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [mealHistory, setMealHistory] = useState<MealEntry[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
 
@@ -16,6 +24,11 @@ export default function Home() {
     const stored = localStorage.getItem("lastMealTime");
     if (stored) {
       setLastMealTime(parseInt(stored, 10));
+    }
+
+    const storedHistory = localStorage.getItem("mealHistory");
+    if (storedHistory) {
+      setMealHistory(JSON.parse(storedHistory));
     }
   }, []);
 
@@ -37,8 +50,16 @@ export default function Home() {
 
   const handleTrackMeal = () => {
     const now = Date.now();
+    const newEntry: MealEntry = {
+      timestamp: now,
+      id: crypto.randomUUID(),
+    };
+
+    const updatedHistory = [newEntry, ...mealHistory];
     setLastMealTime(now);
+    setMealHistory(updatedHistory);
     localStorage.setItem("lastMealTime", now.toString());
+    localStorage.setItem("mealHistory", JSON.stringify(updatedHistory));
     setElapsedTime(0);
   };
 
@@ -59,8 +80,30 @@ export default function Home() {
       const newTime = new Date(dateTimeStr).getTime();
       setLastMealTime(newTime);
       localStorage.setItem("lastMealTime", newTime.toString());
+
+      if (mealHistory.length > 0) {
+        const updatedHistory = [...mealHistory];
+        updatedHistory[0] = { ...updatedHistory[0], timestamp: newTime };
+        setMealHistory(updatedHistory);
+        localStorage.setItem("mealHistory", JSON.stringify(updatedHistory));
+      }
+
       setIsEditDialogOpen(false);
     }
+  };
+
+  const formatDateTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const dateStr = date.toLocaleDateString("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const timeStr = date.toLocaleTimeString("de-DE", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${dateStr} um ${timeStr}`;
   };
 
   const formatTime = (milliseconds: number) => {
@@ -115,7 +158,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-2 flex-wrap">
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
@@ -169,6 +212,57 @@ export default function Home() {
                       </Button>
                     </div>
                   </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="button-history"
+                  >
+                    <History className="mr-2 h-4 w-4" />
+                    Historie anzeigen
+                  </Button>
+                </DialogTrigger>
+                <DialogContent data-testid="dialog-history" className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Mahlzeiten-Historie</DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="h-[400px] pr-4">
+                    {mealHistory.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Noch keine Mahlzeiten aufgezeichnet
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {mealHistory.map((meal, index) => (
+                          <div
+                            key={meal.id}
+                            className="p-4 rounded-lg border border-border bg-card"
+                            data-testid={`history-item-${index}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold text-foreground">
+                                  Mahlzeit {mealHistory.length - index}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {formatDateTime(meal.timestamp)}
+                                </p>
+                              </div>
+                              {index === 0 && (
+                                <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-md">
+                                  Aktuell
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
                 </DialogContent>
               </Dialog>
             </div>
