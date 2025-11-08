@@ -1,0 +1,171 @@
+4:22.1837325Z \____|__  /_____ \____/ |__|    \___  >
+2025-11-08T20:44:22.1837385Z         \/      \/                  \/
+2025-11-08T20:44:22.1837469Z A P P   S E R V I C E   O N   L I N U X
+2025-11-08T20:44:22.1837503Z
+2025-11-08T20:44:22.1837544Z Documentation    : http://aka.ms/webapp-linux
+2025-11-08T20:44:22.1837585Z NodeJS quickstart: https://aka.ms/node-qs
+2025-11-08T20:44:22.183762Z NodeJS Version   : v20.19.5
+2025-11-08T20:44:22.1837655Z Instance Name    : lw0sdlwk000B0Z
+2025-11-08T20:44:22.1837721Z Instance Id      : caed94b29cc0b9b6367f68b374b30f8fff736f34682b8469c185699a593960d6
+2025-11-08T20:44:22.1837756Z
+2025-11-08T20:44:22.1837791Z Note: Any data outside '/home' is not persisted
+2025-11-08T20:44:25.7358469Z Starting OpenBSD Secure Shell server: sshd.
+2025-11-08T20:44:26.0182483Z WEBSITES_INCLUDE_CLOUD_CERTS is not set to true.
+2025-11-08T20:44:26.5242811Z Updating certificates in /etc/ssl/certs...
+2025-11-08T20:45:35.3626698Z rehash: warning: skipping duplicate certificate in azl_SSL.com_TLS_ECC_Root_CA_2022.pem
+2025-11-08T20:45:35.363829Z rehash: warning: skipping duplicate certificate in azl_SSL.com_TLS_RSA_Root_CA_2022.pem
+2025-11-08T20:45:35.7345708Z rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+2025-11-08T20:45:35.8041478Z 4 added, 0 removed; done.
+2025-11-08T20:45:35.8129463Z Running hooks in /etc/ca-certificates/update.d...
+2025-11-08T20:45:35.8229372Z done.
+2025-11-08T20:45:35.8724416Z CA certificates copied and updated successfully.
+2025-11-08T20:45:36.1375732Z Starting periodic command scheduler: cron.
+2025-11-08T20:45:36.4875634Z Found build manifest file at '/home/site/wwwroot/oryx-manifest.toml'. Deserializing it...
+2025-11-08T20:45:36.4897829Z Could not find operation ID in manifest. Generating an operation id...
+2025-11-08T20:45:36.4901301Z Build Operation ID: 2907590a-20f9-4f13-9ba7-e6f39d486071
+2025-11-08T20:45:37.1665627Z Environment Variables for Application Insight's IPA Codeless Configuration exists..
+2025-11-08T20:45:37.2416366Z Writing output script to '/opt/startup/startup.sh'
+2025-11-08T20:45:37.3175985Z Running #!/bin/sh
+2025-11-08T20:45:37.3176614Z
+2025-11-08T20:45:37.3176666Z # Enter the source directory to make sure the script runs where the user expects
+2025-11-08T20:45:37.317672Z cd "/home/site/wwwroot"
+2025-11-08T20:45:37.3176754Z
+2025-11-08T20:45:37.3176791Z export NODE_PATH=/usr/local/lib/node_modules:$NODE_PATH
+2025-11-08T20:45:37.3176861Z if [ -z "$PORT" ]; then
+2025-11-08T20:45:37.3176924Z 		export PORT=8080
+2025-11-08T20:45:37.3176958Z fi
+2025-11-08T20:45:37.3176991Z
+2025-11-08T20:45:37.3177027Z echo Found tar.gz based node_modules.
+2025-11-08T20:45:37.3177064Z extractionCommand="tar -xzf node_modules.tar.gz -C /node_modules"
+2025-11-08T20:45:37.31771Z echo "Removing existing modules directory from root..."
+2025-11-08T20:45:37.3177135Z rm -fr /node_modules
+2025-11-08T20:45:37.3177194Z mkdir -p /node_modules
+2025-11-08T20:45:37.3177231Z echo Extracting modules...
+2025-11-08T20:45:37.3177264Z $extractionCommand
+2025-11-08T20:45:37.3177299Z export NODE_PATH="/node_modules":$NODE_PATH
+2025-11-08T20:45:37.3177334Z export PATH=/node_modules/.bin:$PATH
+2025-11-08T20:45:37.3177369Z if [ -d node_modules ]; then
+2025-11-08T20:45:37.3177771Z     mv -f node_modules _del_node_modules || true
+2025-11-08T20:45:37.3177852Z fi
+2025-11-08T20:45:37.3193665Z
+2025-11-08T20:45:37.3193904Z if [ -d /node_modules ]; then
+2025-11-08T20:45:37.3193944Z     ln -sfn /node_modules ./node_modules
+2025-11-08T20:45:37.3193987Z fi
+2025-11-08T20:45:37.319402Z
+2025-11-08T20:45:37.3194053Z echo "Done."
+2025-11-08T20:45:37.3194538Z npm start
+2025-11-08T20:45:37.328351Z Found tar.gz based node_modules.
+2025-11-08T20:45:37.3284855Z Removing existing modules directory from root...
+2025-11-08T20:45:37.4373116Z Extracting modules...
+2025-11-08T20:46:23.6514319Z Done.
+2025-11-08T20:46:24.6047722Z npm info using npm@10.9.2
+2025-11-08T20:46:24.6064188Z npm info using node@v20.19.5
+2025-11-08T20:46:26.7209474Z
+2025-11-08T20:46:26.7210269Z > rest-express@1.0.0 start
+2025-11-08T20:46:26.721032Z > NODE_ENV=production node dist/index.js
+2025-11-08T20:46:26.7210373Z
+2025-11-08T20:46:29.9019494Z ✅ Notification schedulers started:
+2025-11-08T20:46:29.9033362Z   - 3-hour reminder: Every 5 minutes
+2025-11-08T20:46:29.9036385Z   - Daily reminder: Every day at 9:00 AM
+2025-11-08T20:46:29.9423356Z 8:46:29 PM [express] serving on port 8080
+2025-11-08T20:47:44.50776Z 8:47:44 PM [express] GET /api/push/vapid-public-key 200 in 5ms :: {"publicKey":"BK3kIvlTG7d4tivGDOwJ…
+2025-11-08T20:47:48.5194835Z 8:47:48 PM [express] POST /api/push/subscribe 200 in 3549ms :: {"success":true,"message":"Subscribed…
+2025-11-08T20:48:06.7042789Z 8:48:06 PM [express] POST /api/push/update-meal 400 in 606ms :: {"error":"Failed to update meal time…
+2025-11-08T20:48:06.7108789Z Update meal error: NeonDbError: value "1762634885285" is out of range for type integer
+2025-11-08T20:48:06.7122625Z     at execute (file:///node_modules/@neondatabase/serverless/index.mjs:1556:55)
+2025-11-08T20:48:06.7122676Z     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-11-08T20:48:06.712271Z     at async NeonHttpPreparedQuery.execute (file:///node_modules/drizzle-orm/neon-http/session.js:40:20)
+2025-11-08T20:48:06.7122742Z     at async MemStorage.updatePushSubscription (file:///home/site/wwwroot/dist/index.js:84:22)
+2025-11-08T20:48:06.712277Z     at async file:///home/site/wwwroot/dist/index.js:184:9 {
+2025-11-08T20:48:06.7122797Z   severity: 'ERROR',
+2025-11-08T20:48:06.7122824Z   code: '22003',
+2025-11-08T20:48:06.7122851Z   detail: undefined,
+2025-11-08T20:48:06.7122879Z   hint: undefined,
+2025-11-08T20:48:06.7122906Z   position: undefined,
+2025-11-08T20:48:06.7122968Z   internalPosition: undefined,
+2025-11-08T20:48:06.7122997Z   internalQuery: undefined,
+2025-11-08T20:48:06.7123025Z   where: "unnamed portal parameter $1 = '...'",
+2025-11-08T20:48:06.7123051Z   schema: undefined,
+2025-11-08T20:48:06.7123078Z   table: undefined,
+2025-11-08T20:48:06.7123103Z   column: undefined,
+2025-11-08T20:48:06.7123129Z   dataType: undefined,
+2025-11-08T20:48:06.7123155Z   constraint: undefined,
+2025-11-08T20:48:06.7123181Z   file: 'numutils.c',
+2025-11-08T20:48:06.7123208Z   line: '611',
+2025-11-08T20:48:06.7123236Z   routine: 'pg_strtoint32_safe',
+2025-11-08T20:48:06.7123263Z   sourceError: undefined
+2025-11-08T20:48:06.7123314Z }
+2025-11-08T20:48:15.9864196Z 8:48:15 PM [express] POST /api/push/update-meal 400 in 458ms :: {"error":"Failed to update meal time…
+2025-11-08T20:48:15.9864819Z Update meal error: NeonDbError: value "1762624080000" is out of range for type integer
+2025-11-08T20:48:15.9864864Z     at execute (file:///node_modules/@neondatabase/serverless/index.mjs:1556:55)
+2025-11-08T20:48:15.9864896Z     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-11-08T20:48:15.9864927Z     at async NeonHttpPreparedQuery.execute (file:///node_modules/drizzle-orm/neon-http/session.js:40:20)
+2025-11-08T20:48:15.9864958Z     at async MemStorage.updatePushSubscription (file:///home/site/wwwroot/dist/index.js:84:22)
+2025-11-08T20:48:15.9864987Z     at async file:///home/site/wwwroot/dist/index.js:184:9 {
+2025-11-08T20:48:15.9865015Z   severity: 'ERROR',
+2025-11-08T20:48:15.9865042Z   code: '22003',
+2025-11-08T20:48:15.9865069Z   detail: undefined,
+2025-11-08T20:48:15.9865095Z   hint: undefined,
+2025-11-08T20:48:15.9865122Z   position: undefined,
+2025-11-08T20:48:15.9865171Z   internalPosition: undefined,
+2025-11-08T20:48:15.9865198Z   internalQuery: undefined,
+2025-11-08T20:48:15.9865227Z   where: "unnamed portal parameter $1 = '...'",
+2025-11-08T20:48:15.9865257Z   schema: undefined,
+2025-11-08T20:48:15.9865308Z   table: undefined,
+2025-11-08T20:48:15.9865335Z   column: undefined,
+2025-11-08T20:48:15.9865361Z   dataType: undefined,
+2025-11-08T20:48:15.9865387Z   constraint: undefined,
+2025-11-08T20:48:15.9865414Z   file: 'numutils.c',
+2025-11-08T20:48:15.986544Z   line: '611',
+2025-11-08T20:48:15.9865468Z   routine: 'pg_strtoint32_safe',
+2025-11-08T20:48:15.9865494Z   sourceError: undefined
+2025-11-08T20:48:15.9865546Z }
+2025-11-08T20:48:26.2667885Z Update meal error: NeonDbError: value "1762624020000" is out of range for type integer
+2025-11-08T20:48:26.2668406Z     at execute (file:///node_modules/@neondatabase/serverless/index.mjs:1556:55)
+2025-11-08T20:48:26.2668443Z     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-11-08T20:48:26.2668478Z     at async NeonHttpPreparedQuery.execute (file:///node_modules/drizzle-orm/neon-http/session.js:40:20)
+2025-11-08T20:48:26.2668506Z     at async MemStorage.updatePushSubscription (file:///home/site/wwwroot/dist/index.js:84:22)
+2025-11-08T20:48:26.2668533Z     at async file:///home/site/wwwroot/dist/index.js:184:9 {
+2025-11-08T20:48:26.2668561Z   severity: 'ERROR',
+2025-11-08T20:48:26.2668585Z   code: '22003',
+2025-11-08T20:48:26.2668614Z   detail: undefined,
+2025-11-08T20:48:26.2668713Z   hint: undefined,
+2025-11-08T20:48:26.266874Z   position: undefined,
+2025-11-08T20:48:26.2668767Z   internalPosition: undefined,
+2025-11-08T20:48:26.2668792Z   internalQuery: undefined,
+2025-11-08T20:48:26.2668818Z   where: "unnamed portal parameter $1 = '...'",
+2025-11-08T20:48:26.2668843Z   schema: undefined,
+2025-11-08T20:48:26.2668867Z   table: undefined,
+2025-11-08T20:48:26.2668891Z   column: undefined,
+2025-11-08T20:48:26.2668914Z   dataType: undefined,
+2025-11-08T20:48:26.2668939Z   constraint: undefined,
+2025-11-08T20:48:26.2668964Z   file: 'numutils.c',
+2025-11-08T20:48:26.2668988Z   line: '611',
+2025-11-08T20:48:26.2669034Z   routine: 'pg_strtoint32_safe',
+2025-11-08T20:48:26.2669059Z   sourceError: undefined
+2025-11-08T20:48:26.2669084Z }
+2025-11-08T20:48:26.2689276Z 8:48:26 PM [express] POST /api/push/update-meal 400 in 520ms :: {"error":"Failed to update meal time…
+2025-11-08T20:48:36.542001Z Update meal error: NeonDbError: value "1762623960000" is out of range for type integer
+2025-11-08T20:48:36.5420408Z     at execute (file:///node_modules/@neondatabase/serverless/index.mjs:1556:55)
+2025-11-08T20:48:36.5420446Z     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-11-08T20:48:36.5420478Z     at async NeonHttpPreparedQuery.execute (file:///node_modules/drizzle-orm/neon-http/session.js:40:20)
+2025-11-08T20:48:36.5420508Z     at async MemStorage.updatePushSubscription (file:///home/site/wwwroot/dist/index.js:84:22)
+2025-11-08T20:48:36.5420541Z     at async file:///home/site/wwwroot/dist/index.js:184:9 {
+2025-11-08T20:48:36.5420572Z   severity: 'ERROR',
+2025-11-08T20:48:36.5420679Z   code: '22003',
+2025-11-08T20:48:36.5420709Z   detail: undefined,
+2025-11-08T20:48:36.5420735Z   hint: undefined,
+2025-11-08T20:48:36.5420762Z   position: undefined,
+2025-11-08T20:48:36.5420789Z   internalPosition: undefined,
+2025-11-08T20:48:36.5420816Z   internalQuery: undefined,
+2025-11-08T20:48:36.5420844Z   where: "unnamed portal parameter $1 = '...'",
+2025-11-08T20:48:36.5420871Z   schema: undefined,
+2025-11-08T20:48:36.5420896Z   table: undefined,
+2025-11-08T20:48:36.5420923Z   column: undefined,
+2025-11-08T20:48:36.5420948Z   dataType: undefined,
+2025-11-08T20:48:36.5420976Z   constraint: undefined,
+2025-11-08T20:48:36.5421025Z   file: 'numutils.c',
+2025-11-08T20:48:36.5421052Z   line: '611',
+2025-11-08T20:48:36.5421081Z   routine: 'pg_strtoint32_safe',
+2025-11-08T20:48:36.5421107Z   sourceError: undefined
+2025-11-08T20:48:36.5421133Z }
