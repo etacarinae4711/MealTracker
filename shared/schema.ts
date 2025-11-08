@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, bigint, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -21,7 +21,7 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   endpoint: text("endpoint").notNull().unique(),
   keys: text("keys").notNull(),
-  lastMealTime: integer("last_meal_time"),
+  lastMealTime: bigint("last_meal_time", { mode: "number" }),
   lastDailyReminder: timestamp("last_daily_reminder"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
