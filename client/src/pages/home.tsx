@@ -4,7 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Utensils, Pencil, History } from "lucide-react";
+import { Utensils, Pencil, History, Bell, BellOff } from "lucide-react";
+import { registerPushNotifications, unregisterPushNotifications, isPushNotificationEnabled, updateMealTime } from "@/lib/push-notifications";
+import { useToast } from "@/hooks/use-toast";
 
 interface MealEntry {
   timestamp: number;
@@ -19,6 +21,8 @@ export default function Home() {
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const stored = localStorage.getItem("lastMealTime");
@@ -30,6 +34,8 @@ export default function Home() {
     if (storedHistory) {
       setMealHistory(JSON.parse(storedHistory));
     }
+
+    isPushNotificationEnabled().then(setNotificationsEnabled);
   }, []);
 
   useEffect(() => {
@@ -48,7 +54,7 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [lastMealTime]);
 
-  const handleTrackMeal = () => {
+  const handleTrackMeal = async () => {
     const now = Date.now();
     const newEntry: MealEntry = {
       timestamp: now,
@@ -61,6 +67,10 @@ export default function Home() {
     localStorage.setItem("lastMealTime", now.toString());
     localStorage.setItem("mealHistory", JSON.stringify(updatedHistory));
     setElapsedTime(0);
+
+    if (notificationsEnabled) {
+      await updateMealTime(now);
+    }
   };
 
   const handleEditMeal = () => {
@@ -74,7 +84,7 @@ export default function Home() {
     }
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editDate && editTime) {
       const dateTimeStr = `${editDate}T${editTime}:00`;
       const newTime = new Date(dateTimeStr).getTime();
@@ -88,7 +98,37 @@ export default function Home() {
         localStorage.setItem("mealHistory", JSON.stringify(updatedHistory));
       }
 
+      if (notificationsEnabled) {
+        await updateMealTime(newTime);
+      }
+
       setIsEditDialogOpen(false);
+    }
+  };
+
+  const handleToggleNotifications = async () => {
+    if (notificationsEnabled) {
+      await unregisterPushNotifications();
+      setNotificationsEnabled(false);
+      toast({
+        title: "Benachrichtigungen deaktiviert",
+        description: "Sie erhalten keine Erinnerungen mehr",
+      });
+    } else {
+      const success = await registerPushNotifications(lastMealTime || undefined);
+      if (success) {
+        setNotificationsEnabled(true);
+        toast({
+          title: "Benachrichtigungen aktiviert",
+          description: "Sie erhalten jetzt Erinnerungen nach 3+ Stunden und tägliche Reminders",
+        });
+      } else {
+        toast({
+          title: "Fehler",
+          description: "Benachrichtigungen konnten nicht aktiviert werden",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -128,7 +168,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center gap-3">
           <Button
             onClick={handleTrackMeal}
             size="lg"
@@ -137,6 +177,25 @@ export default function Home() {
           >
             <Utensils className="mr-2 h-5 w-5" />
             Track Meal
+          </Button>
+
+          <Button
+            onClick={handleToggleNotifications}
+            variant={notificationsEnabled ? "default" : "outline"}
+            size="sm"
+            data-testid="button-toggle-notifications"
+          >
+            {notificationsEnabled ? (
+              <>
+                <Bell className="mr-2 h-4 w-4" />
+                Benachrichtigungen aktiv
+              </>
+            ) : (
+              <>
+                <BellOff className="mr-2 h-4 w-4" />
+                Benachrichtigungen aktivieren
+              </>
+            )}
           </Button>
         </div>
 
