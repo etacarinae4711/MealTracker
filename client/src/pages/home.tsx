@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Utensils, Pencil, History, Bell, BellOff } from "lucide-react";
-import { registerPushNotifications, unregisterPushNotifications, isPushNotificationEnabled, updateMealTime } from "@/lib/push-notifications";
+import { registerPushNotifications, unregisterPushNotifications, isPushNotificationEnabled, updateMealTime, resetBadge } from "@/lib/push-notifications";
 import { useToast } from "@/hooks/use-toast";
 
 interface MealEntry {
@@ -68,7 +68,7 @@ export default function Home() {
     localStorage.setItem("mealHistory", JSON.stringify(updatedHistory));
     setElapsedTime(0);
 
-    // Badge auf 0 zurücksetzen
+    // Badge auf 0 zurücksetzen (lokal)
     if ('setAppBadge' in navigator) {
       try {
         await navigator.setAppBadge(0);
@@ -77,8 +77,10 @@ export default function Home() {
       }
     }
 
+    // Badge-Update an Server senden und Push Notification mit Badge 0 triggern
     if (notificationsEnabled) {
       await updateMealTime(now);
+      await resetBadge();
     }
   };
 

@@ -62,6 +62,25 @@ export async function updateMealTime(lastMealTime: number): Promise<void> {
   }
 }
 
+export async function resetBadge(): Promise<void> {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (subscription) {
+      await fetch("/api/push/reset-badge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+        }),
+      });
+    }
+  } catch (error) {
+    console.error("Error resetting badge:", error);
+  }
+}
+
 export async function unregisterPushNotifications(): Promise<void> {
   try {
     const registration = await navigator.serviceWorker.ready;
