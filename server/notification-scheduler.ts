@@ -22,7 +22,7 @@ export function startNotificationScheduler() {
         }
 
         const timeSinceLastMeal = now - subscription.lastMealTime;
-        const hoursAgo = Math.floor(timeSinceLastMeal / (60 * 60 * 1000));
+        const hoursAgo = Math.min(Math.floor(timeSinceLastMeal / (60 * 60 * 1000)), 99);
         
         console.log(`[Hourly Badge] Sending badge ${hoursAgo} to ${subscription.id.substring(0, 8)}`);
         const success = await sendPushNotification(subscription, {
@@ -57,7 +57,8 @@ export function startNotificationScheduler() {
         }
 
         const timeSinceLastMeal = now - subscription.lastMealTime;
-        const hoursAgo = Math.floor(timeSinceLastMeal / (60 * 60 * 1000));
+        const hoursAgoRaw = Math.floor(timeSinceLastMeal / (60 * 60 * 1000));
+        const hoursAgo = Math.min(hoursAgoRaw, 99);
         console.log(`[3h Scheduler] ${subscription.id.substring(0, 8)} - last meal ${hoursAgo}h ago`);
         
         if (timeSinceLastMeal < THREE_HOURS_MS) {
@@ -75,7 +76,7 @@ export function startNotificationScheduler() {
         console.log(`[3h Scheduler] Sending push to ${subscription.id.substring(0, 8)} - meal was ${hoursAgo}h ago`);
         const success = await sendPushNotification(subscription, {
           title: "Mealtracker Erinnerung",
-          body: `Letzte Mahlzeit war vor ${hoursAgo} Stunden`,
+          body: `Letzte Mahlzeit war vor ${hoursAgoRaw} Stunden`,
           icon: "/icon-192.png",
           badge: "/icon-192.png",
           badgeCount: hoursAgo,
