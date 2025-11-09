@@ -191,7 +191,7 @@ export default function Home() {
           <Button
             onClick={handleTrackMeal}
             size="lg"
-            className="w-full min-h-16 px-8 text-lg font-bold shadow-md hover:shadow-lg transition-shadow"
+            className="w-full min-h-16 px-8 text-lg font-bold shadow-md hover:shadow-lg active:scale-95 transition-all"
             data-testid="button-track-meal"
           >
             <Utensils className="mr-3 h-6 w-6" />
