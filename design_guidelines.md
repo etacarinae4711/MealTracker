@@ -39,14 +39,15 @@ Use Tailwind units of 2, 4, 6, 8, and 12 for consistent rhythm
 
 **Track Meal Button:**
 - Large, prominent touch target: min-height of 64px (min-h-16)
-- Rounded corners: rounded-xl (more prominent than default)
+- Very rounded corners: rounded-3xl (pill-like appearance for friendliness)
 - Full width across all breakpoints (w-full) for maximum prominence
-- Typography: text-lg font-bold (enhanced from semibold for better visibility)
+- Color: Emerald green (bg-emerald-600 with hover:bg-emerald-700) - conveys action and positivity
+- Typography: text-lg font-bold text-white (enhanced from semibold for better visibility)
 - Padding: px-8
 - Subtle shadow (shadow-md) with hover enhancement (hover:shadow-lg)
 - Clear active/pressed state with slight scale transform (active:scale-95)
 - Slightly larger icon (h-6 w-6) for better visual balance
-- Note: Custom sizing is acceptable for primary CTA to meet prominence requirements
+- Note: Custom sizing and colors acceptable for primary CTA to meet prominence requirements
 
 **Last Meal Timer Display:**
 - Card-style container with rounded-2xl
