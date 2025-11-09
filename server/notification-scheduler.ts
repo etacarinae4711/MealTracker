@@ -8,6 +8,42 @@ const FIVE_MINUTES_MS = 5 * 60 * 1000;
 const lastNotificationSent = new Map<string, number>();
 
 export function startNotificationScheduler() {
+  // Stündlicher Badge-Update (stille Push)
+  cron.schedule("0 * * * *", async () => {
+    try {
+      const subscriptions = await storage.getAllPushSubscriptions();
+      const now = Date.now();
+      console.log(`[Hourly Badge] Updating badges for ${subscriptions.length} subscriptions at ${new Date().toISOString()}`);
+
+      for (const subscription of subscriptions) {
+        if (!subscription.lastMealTime) {
+          console.log(`[Hourly Badge] Skipping ${subscription.id.substring(0, 8)} - no lastMealTime`);
+          continue;
+        }
+
+        const timeSinceLastMeal = now - subscription.lastMealTime;
+        const hoursAgo = Math.floor(timeSinceLastMeal / (60 * 60 * 1000));
+        
+        console.log(`[Hourly Badge] Sending badge ${hoursAgo} to ${subscription.id.substring(0, 8)}`);
+        const success = await sendPushNotification(subscription, {
+          title: "",
+          body: "",
+          silent: true,
+          badgeCount: hoursAgo,
+        });
+
+        if (success) {
+          console.log(`[Hourly Badge] ✅ Badge updated to ${hoursAgo} for ${subscription.id.substring(0, 8)}`);
+        } else {
+          console.log(`[Hourly Badge] ❌ Badge update failed for ${subscription.id.substring(0, 8)}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error in hourly badge scheduler:", error);
+    }
+  });
+
+  // 3-Stunden-Erinnerung (mit Badge)
   cron.schedule("*/5 * * * *", async () => {
     try {
       const subscriptions = await storage.getAllPushSubscriptions();
@@ -42,6 +78,7 @@ export function startNotificationScheduler() {
           body: `Letzte Mahlzeit war vor ${hoursAgo} Stunden`,
           icon: "/icon-192.png",
           badge: "/icon-192.png",
+          badgeCount: hoursAgo,
         });
 
         if (success) {
@@ -95,6 +132,7 @@ export function startNotificationScheduler() {
   });
 
   console.log("✅ Notification schedulers started:");
+  console.log("  - Hourly badge update: Every hour (silent push)");
   console.log("  - 3-hour reminder: Every 5 minutes");
   console.log("  - Daily reminder: Every day at 9:00 AM");
 }

@@ -71,7 +71,9 @@ self.addEventListener('push', (event) => {
     title: 'Mealtracker',
     body: 'Neue Benachrichtigung',
     icon: '/icon-192.png',
-    badge: '/icon-192.png'
+    badge: '/icon-192.png',
+    silent: false,
+    badgeCount: null
   };
 
   if (event.data) {
@@ -82,6 +84,24 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  // Stille Push: Nur Badge aktualisieren, keine Notification
+  if (data.silent && data.badgeCount !== null && data.badgeCount !== undefined) {
+    console.log('Service Worker: Silent push - updating badge to', data.badgeCount);
+    
+    // Feature detection und Badge setzen
+    if ('setAppBadge' in self.navigator) {
+      event.waitUntil(
+        self.navigator.setAppBadge(data.badgeCount).catch((error) => {
+          console.log('Service Worker: Failed to set badge', error);
+        })
+      );
+    } else {
+      console.log('Service Worker: setAppBadge not supported');
+    }
+    return;
+  }
+
+  // Normale Push: Notification anzeigen + Badge setzen
   const options = {
     body: data.body,
     icon: data.icon || '/icon-192.png',
@@ -93,9 +113,20 @@ self.addEventListener('push', (event) => {
     }
   };
 
-  event.waitUntil(
+  const promises = [
     self.registration.showNotification(data.title, options)
-  );
+  ];
+
+  // Badge setzen wenn angegeben
+  if (data.badgeCount !== null && data.badgeCount !== undefined && 'setAppBadge' in self.navigator) {
+    promises.push(
+      self.navigator.setAppBadge(data.badgeCount).catch((error) => {
+        console.log('Service Worker: Failed to set badge', error);
+      })
+    );
+  }
+
+  event.waitUntil(Promise.all(promises));
 });
 
 self.addEventListener('notificationclick', (event) => {
