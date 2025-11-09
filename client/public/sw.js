@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mealtracker-v2-NEW-BUTTON';
+const CACHE_NAME = 'mealtracker-v2';
 const urlsToCache = [
   '/',
   '/index.html',
