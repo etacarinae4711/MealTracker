@@ -64,6 +64,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/push/reset-badge", async (req, res) => {
+    try {
+      const { endpoint } = req.body;
+      const subscription = await storage.getPushSubscriptionByEndpoint(endpoint);
+      
+      if (subscription) {
+        await sendPushNotification(subscription, {
+          title: "",
+          body: "",
+          silent: true,
+          badgeCount: 0,
+        });
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: "Subscription not found" });
+      }
+    } catch (error) {
+      console.error("Reset badge error:", error);
+      res.status(400).json({ error: "Failed to reset badge" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
