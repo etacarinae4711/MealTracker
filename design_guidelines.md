@@ -29,7 +29,8 @@ Use Tailwind units of 2, 4, 6, 8, and 12 for consistent rhythm
 
 **Type Scale:**
 - App Title: text-2xl font-bold (desktop), text-xl font-bold (mobile)
-- Button Text: text-lg font-semibold
+- Primary Button (Track Meal): text-lg font-bold
+- Secondary Buttons (size="sm"): text-sm font-medium (via shadcn preset)
 - Timer Display: text-6xl font-bold (desktop), text-5xl font-bold (mobile)
 - Timer Label: text-sm font-semibold uppercase tracking-wide
 - Helper Text: text-base font-regular
@@ -37,12 +38,14 @@ Use Tailwind units of 2, 4, 6, 8, and 12 for consistent rhythm
 ## Core Components
 
 **Track Meal Button:**
-- Large, prominent touch target: min-height of 56px
+- Large, prominent touch target: min-height of 64px (min-h-16)
 - Rounded: rounded-xl
-- Full width on mobile, max-w-xs centered on desktop
-- Typography: text-lg font-semibold
-- Padding: px-8 py-4
+- Full width across all breakpoints (w-full) for maximum prominence
+- Typography: text-lg font-bold (enhanced from semibold for better visibility)
+- Padding: px-8
+- Subtle shadow (shadow-md) with hover enhancement (hover:shadow-lg)
 - Clear active/pressed state with slight scale transform (scale-95)
+- Slightly larger icon (h-6 w-6) for better visual balance
 
 **Last Meal Timer Display:**
 - Card-style container with rounded-2xl
@@ -59,9 +62,10 @@ Use Tailwind units of 2, 4, 6, 8, and 12 for consistent rhythm
 
 ## Visual Hierarchy
 
-1. **Primary Focus:** Track Meal button (largest interactive element)
+1. **Primary Focus:** Track Meal button (largest interactive element, full-width, bold, with subtle shadow)
 2. **Secondary Focus:** Timer display (largest text, visually weighted container)
-3. **Tertiary:** App title and helper text
+3. **Tertiary:** Notification toggle button and secondary actions
+4. **Quaternary:** App title and helper text
 
 **Vertical Flow:**
 ```
