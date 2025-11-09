@@ -2,7 +2,16 @@
 
 ## Overview
 
-Mealtracker is a minimal, mobile-first web application designed to track the time elapsed since a user's last meal. The app features a clean, centered interface with a prominent "Track Meal" button and a real-time timer display showing hours and minutes since the last meal was logged. Built with a focus on simplicity and readability, it stores meal timestamps in browser localStorage for persistence across sessions.
+Mealtracker is a minimal, mobile-first web application designed to track the time elapsed since a user's last meal. The app features a clean, centered interface with a prominent "Track Meal" button (teal color with 3D effect) and a real-time timer display showing hours and minutes since the last meal was logged. Built with a focus on simplicity and readability, it stores meal timestamps in browser localStorage for persistence across sessions.
+
+## Recent Changes (2025-11-09)
+
+- Implemented configurable target hours (1-24h range) via Settings dialog with +/- buttons
+- Added visual progress bar showing percentage to target goal
+- Enhanced Track Meal button with 3D gradient effect and press animation
+- Badge notifications now display hours elapsed (1-99) instead of just "1"
+- Target hours stored in localStorage with validation against corrupt values
+- Intuitive number picker interface (large display + round +/- buttons) for settings
 
 ## User Preferences
 
@@ -65,7 +74,16 @@ Preferred communication style: Simple, everyday language.
 
 **Client-Side Storage:**
 - LocalStorage for persisting meal timestamps without requiring backend authentication
+- LocalStorage for user settings (targetHours: 1-24 range, default 3)
+- Validation on load: sanitizes corrupt/invalid values (defaults to 3)
 - Enables offline-first user experience for core meal tracking functionality
+
+**Push Notifications & Badge System:**
+- App badge displays hours elapsed since last meal (1-99 hours maximum)
+- Hourly silent push updates badge count automatically
+- Badge resets to 0 when tracking new meal (instant local + background push)
+- Target-hour reminder notifications with badge count
+- Daily 9 AM reminder notifications
 
 ### External Dependencies
 
