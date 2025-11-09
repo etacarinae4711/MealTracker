@@ -188,14 +188,13 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col items-center gap-3">
-          <p className="text-red-500 font-bold text-2xl">TEST - ÄNDERUNG SICHTBAR?</p>
           <Button
             onClick={handleTrackMeal}
-            size="lg"
-            className="w-full min-h-16 px-8 text-lg font-bold shadow-md hover:shadow-lg active:scale-95 transition-all bg-blue-600 hover:bg-blue-700"
+            style={{ minHeight: '80px', width: '100%', fontSize: '20px', fontWeight: 'bold' }}
+            className="shadow-lg"
             data-testid="button-track-meal"
           >
-            <Utensils className="mr-3 h-6 w-6" />
+            <Utensils className="mr-3" style={{ width: '28px', height: '28px' }} />
             Track Meal
           </Button>
 
