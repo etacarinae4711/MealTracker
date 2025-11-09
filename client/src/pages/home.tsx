@@ -239,7 +239,7 @@ export default function Home() {
           <Button
             onClick={handleTrackMeal}
             size="lg"
-            className="w-full min-h-16 px-8 text-lg font-bold shadow-md hover:shadow-lg active:scale-95 transition-all rounded-3xl bg-teal-600 hover:bg-teal-700 text-white border-teal-700"
+            className="w-full min-h-16 px-8 text-lg font-bold rounded-3xl bg-gradient-to-b from-teal-500 to-teal-700 text-white border-2 border-teal-800 shadow-[0_8px_0_0_rgb(17,94,89),0_13px_25px_0_rgba(0,0,0,0.3)] hover:shadow-[0_6px_0_0_rgb(17,94,89),0_10px_20px_0_rgba(0,0,0,0.3)] hover:translate-y-[2px] active:shadow-[0_2px_0_0_rgb(17,94,89),0_3px_10px_0_rgba(0,0,0,0.3)] active:translate-y-[6px] transition-all duration-100"
             data-testid="button-track-meal"
           >
             <Utensils className="mr-3 h-6 w-6" />
