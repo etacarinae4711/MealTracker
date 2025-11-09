@@ -12,24 +12,31 @@ export function startNotificationScheduler() {
     try {
       const subscriptions = await storage.getAllPushSubscriptions();
       const now = Date.now();
+      console.log(`[3h Scheduler] Checking ${subscriptions.length} subscriptions at ${new Date().toISOString()}`);
 
       for (const subscription of subscriptions) {
         if (!subscription.lastMealTime) {
+          console.log(`[3h Scheduler] Skipping ${subscription.id.substring(0, 8)} - no lastMealTime`);
           continue;
         }
 
         const timeSinceLastMeal = now - subscription.lastMealTime;
+        const hoursAgo = Math.floor(timeSinceLastMeal / (60 * 60 * 1000));
+        console.log(`[3h Scheduler] ${subscription.id.substring(0, 8)} - last meal ${hoursAgo}h ago`);
         
         if (timeSinceLastMeal < THREE_HOURS_MS) {
+          console.log(`[3h Scheduler] Skipping ${subscription.id.substring(0, 8)} - only ${hoursAgo}h (need 3+)`);
           continue;
         }
 
         const lastSent = lastNotificationSent.get(subscription.id);
         if (lastSent && (now - lastSent) < THREE_HOURS_MS) {
+          const hoursSinceLastSent = Math.floor((now - lastSent) / (60 * 60 * 1000));
+          console.log(`[3h Scheduler] Skipping ${subscription.id.substring(0, 8)} - already sent ${hoursSinceLastSent}h ago`);
           continue;
         }
 
-        const hoursAgo = Math.floor(timeSinceLastMeal / (60 * 60 * 1000));
+        console.log(`[3h Scheduler] Sending push to ${subscription.id.substring(0, 8)} - meal was ${hoursAgo}h ago`);
         const success = await sendPushNotification(subscription, {
           title: "Mealtracker Erinnerung",
           body: `Letzte Mahlzeit war vor ${hoursAgo} Stunden`,
@@ -38,7 +45,10 @@ export function startNotificationScheduler() {
         });
 
         if (success) {
+          console.log(`[3h Scheduler] ✅ Push sent successfully to ${subscription.id.substring(0, 8)}`);
           lastNotificationSent.set(subscription.id, now);
+        } else {
+          console.log(`[3h Scheduler] ❌ Push failed for ${subscription.id.substring(0, 8)}`);
         }
       }
     } catch (error) {
