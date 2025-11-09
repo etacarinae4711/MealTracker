@@ -68,6 +68,15 @@ export default function Home() {
     localStorage.setItem("mealHistory", JSON.stringify(updatedHistory));
     setElapsedTime(0);
 
+    // Badge auf 0 zurücksetzen
+    if ('setAppBadge' in navigator) {
+      try {
+        await navigator.setAppBadge(0);
+      } catch (error) {
+        console.log('Failed to clear badge:', error);
+      }
+    }
+
     if (notificationsEnabled) {
       await updateMealTime(now);
     }
@@ -96,6 +105,16 @@ export default function Home() {
         updatedHistory[0] = { ...updatedHistory[0], timestamp: newTime };
         setMealHistory(updatedHistory);
         localStorage.setItem("mealHistory", JSON.stringify(updatedHistory));
+      }
+
+      // Badge neu berechnen basierend auf bearbeiteter Zeit
+      if ('setAppBadge' in navigator) {
+        try {
+          const hoursAgo = Math.floor((Date.now() - newTime) / (60 * 60 * 1000));
+          await navigator.setAppBadge(hoursAgo);
+        } catch (error) {
+          console.log('Failed to update badge:', error);
+        }
       }
 
       if (notificationsEnabled) {

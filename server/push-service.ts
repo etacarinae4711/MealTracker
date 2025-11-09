@@ -20,6 +20,8 @@ export interface PushNotificationPayload {
   icon?: string;
   badge?: string;
   data?: any;
+  silent?: boolean;
+  badgeCount?: number;
 }
 
 export async function sendPushNotification(
