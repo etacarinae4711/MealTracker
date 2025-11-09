@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { Utensils, Pencil, History, Bell, BellOff } from "lucide-react";
+import { Utensils, Pencil, History, Bell, BellOff, Settings } from "lucide-react";
 import { registerPushNotifications, unregisterPushNotifications, isPushNotificationEnabled, updateMealTime, resetBadge } from "@/lib/push-notifications";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,6 +23,9 @@ export default function Home() {
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [targetHours, setTargetHours] = useState<number>(3);
+  const [tempTargetHours, setTempTargetHours] = useState<string>("3");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -34,6 +37,19 @@ export default function Home() {
     const storedHistory = localStorage.getItem("mealHistory");
     if (storedHistory) {
       setMealHistory(JSON.parse(storedHistory));
+    }
+
+    const storedTargetHours = localStorage.getItem("targetHours");
+    if (storedTargetHours) {
+      const hours = parseInt(storedTargetHours, 10);
+      if (!isNaN(hours) && hours >= 1 && hours <= 24) {
+        setTargetHours(hours);
+        setTempTargetHours(hours.toString());
+      } else {
+        localStorage.setItem("targetHours", "3");
+        setTargetHours(3);
+        setTempTargetHours("3");
+      }
     }
 
     isPushNotificationEnabled().then(setNotificationsEnabled);
@@ -142,7 +158,7 @@ export default function Home() {
         setNotificationsEnabled(true);
         toast({
           title: "Benachrichtigungen aktiviert",
-          description: "Sie erhalten jetzt Erinnerungen nach 3+ Stunden und tägliche Reminders",
+          description: `Sie erhalten jetzt Erinnerungen nach ${targetHours}+ Stunden und tägliche Reminders`,
         });
       } else {
         toast({
@@ -152,6 +168,28 @@ export default function Home() {
         });
       }
     }
+  };
+
+  const handleSaveSettings = () => {
+    const hours = parseInt(tempTargetHours, 10);
+    
+    if (isNaN(hours) || hours < 1 || hours > 24) {
+      toast({
+        title: "Ungültige Eingabe",
+        description: "Bitte geben Sie eine Zahl zwischen 1 und 24 ein",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTargetHours(hours);
+    localStorage.setItem("targetHours", hours.toString());
+    setIsSettingsDialogOpen(false);
+    
+    toast({
+      title: "Einstellungen gespeichert",
+      description: `Zielzeit auf ${hours} Stunden gesetzt`,
+    });
   };
 
   const formatDateTime = (timestamp: number) => {
@@ -176,9 +214,11 @@ export default function Home() {
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   };
 
-  const isGreen = elapsedTime >= 3 * 60 * 60 * 1000;
+  const safeTargetHours = Math.max(1, Math.min(24, targetHours));
+  const targetMilliseconds = safeTargetHours * 60 * 60 * 1000;
+  const isGreen = elapsedTime >= targetMilliseconds;
   
-  const progressPercentage = Math.min((elapsedTime / (3 * 60 * 60 * 1000)) * 100, 100);
+  const progressPercentage = Math.min((elapsedTime / targetMilliseconds) * 100, 100);
   
   const progressHours = Math.floor(elapsedTime / (60 * 60 * 1000));
   const progressMinutes = Math.floor((elapsedTime % (60 * 60 * 1000)) / (60 * 1000));
@@ -246,7 +286,7 @@ export default function Home() {
               <div className="mt-6 space-y-2">
                 <div className="flex justify-between text-xs text-white/90 font-medium">
                   <span>{progressHours}h {progressMinutes}m</span>
-                  <span>3h Ziel</span>
+                  <span>{targetHours}h Ziel</span>
                 </div>
                 <div 
                   className="relative h-3 w-full overflow-hidden rounded-full bg-white/20"
@@ -254,7 +294,7 @@ export default function Home() {
                   aria-valuenow={Math.floor(progressPercentage)}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-label="Fortschritt bis zum 3-Stunden-Ziel"
+                  aria-label={`Fortschritt bis zum ${targetHours}-Stunden-Ziel`}
                 >
                   <div 
                     className="h-full bg-white transition-all duration-300"
@@ -263,7 +303,7 @@ export default function Home() {
                   />
                 </div>
                 <p className="text-xs text-white/80 font-medium">
-                  {progressPercentage >= 100 ? "Ziel erreicht! 🎉" : `${Math.floor(progressPercentage)}% bis zum 3-Stunden-Ziel`}
+                  {progressPercentage >= 100 ? "Ziel erreicht! 🎉" : `${Math.floor(progressPercentage)}% bis zum ${targetHours}-Stunden-Ziel`}
                 </p>
               </div>
             </div>
@@ -373,6 +413,57 @@ export default function Home() {
                       </div>
                     )}
                   </ScrollArea>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="button-settings"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Einstellungen
+                  </Button>
+                </DialogTrigger>
+                <DialogContent data-testid="dialog-settings">
+                  <DialogHeader>
+                    <DialogTitle>Einstellungen</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="target-hours">Zielzeit (in Stunden)</Label>
+                      <Input
+                        id="target-hours"
+                        type="number"
+                        min="1"
+                        max="24"
+                        value={tempTargetHours}
+                        onChange={(e) => setTempTargetHours(e.target.value)}
+                        data-testid="input-target-hours"
+                        placeholder="3"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Legen Sie fest, nach wie vielen Stunden Sie erinnert werden möchten (1-24 Stunden)
+                      </p>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsSettingsDialogOpen(false)}
+                        data-testid="button-cancel-settings"
+                      >
+                        Abbrechen
+                      </Button>
+                      <Button
+                        onClick={handleSaveSettings}
+                        data-testid="button-save-settings"
+                      >
+                        Speichern
+                      </Button>
+                    </div>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
