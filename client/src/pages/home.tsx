@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { Utensils, Pencil, History, Bell, BellOff } from "lucide-react";
 import { registerPushNotifications, unregisterPushNotifications, isPushNotificationEnabled, updateMealTime, resetBadge } from "@/lib/push-notifications";
 import { useToast } from "@/hooks/use-toast";
@@ -176,6 +177,11 @@ export default function Home() {
   };
 
   const isGreen = elapsedTime >= 3 * 60 * 60 * 1000;
+  
+  const progressPercentage = Math.min((elapsedTime / (3 * 60 * 60 * 1000)) * 100, 100);
+  
+  const progressHours = Math.floor(elapsedTime / (60 * 60 * 1000));
+  const progressMinutes = Math.floor((elapsedTime % (60 * 60 * 1000)) / (60 * 1000));
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 md:p-8">
@@ -236,6 +242,30 @@ export default function Home() {
               <p className="text-5xl md:text-6xl font-bold text-white" data-testid="timer-value">
                 {formatTime(elapsedTime)}
               </p>
+              
+              <div className="mt-6 space-y-2">
+                <div className="flex justify-between text-xs text-white/90 font-medium">
+                  <span>{progressHours}h {progressMinutes}m</span>
+                  <span>3h Ziel</span>
+                </div>
+                <div 
+                  className="relative h-3 w-full overflow-hidden rounded-full bg-white/20"
+                  role="progressbar"
+                  aria-valuenow={Math.floor(progressPercentage)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Fortschritt bis zum 3-Stunden-Ziel"
+                >
+                  <div 
+                    className="h-full bg-white transition-all duration-300"
+                    style={{ width: `${progressPercentage}%` }}
+                    data-testid="progress-bar"
+                  />
+                </div>
+                <p className="text-xs text-white/80 font-medium">
+                  {progressPercentage >= 100 ? "Ziel erreicht! 🎉" : `${Math.floor(progressPercentage)}% bis zum 3-Stunden-Ziel`}
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-center gap-2 flex-wrap">
