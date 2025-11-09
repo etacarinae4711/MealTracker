@@ -41,7 +41,7 @@ Use Tailwind units of 2, 4, 6, 8, and 12 for consistent rhythm
 - Large, prominent touch target: min-height of 64px (min-h-16)
 - Very rounded corners: rounded-3xl (pill-like appearance for friendliness)
 - Full width across all breakpoints (w-full) for maximum prominence
-- Color: Emerald green (bg-emerald-600 with hover:bg-emerald-700) - conveys action and positivity
+- Color: Petrol/Teal (bg-teal-600 with hover:bg-teal-700) - modern, calm, and inviting
 - Typography: text-lg font-bold text-white (enhanced from semibold for better visibility)
 - Padding: px-8
 - Subtle shadow (shadow-md) with hover enhancement (hover:shadow-lg)
