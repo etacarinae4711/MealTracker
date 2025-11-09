@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { Utensils, Pencil, History, Bell, BellOff, Settings } from "lucide-react";
+import { Utensils, Pencil, History, Bell, BellOff, Settings, Plus, Minus } from "lucide-react";
 import { registerPushNotifications, unregisterPushNotifications, isPushNotificationEnabled, updateMealTime, resetBadge } from "@/lib/push-notifications";
 import { useToast } from "@/hooks/use-toast";
 
@@ -190,6 +190,20 @@ export default function Home() {
       title: "Einstellungen gespeichert",
       description: `Zielzeit auf ${hours} Stunden gesetzt`,
     });
+  };
+
+  const handleIncreaseHours = () => {
+    const current = parseInt(tempTargetHours, 10);
+    if (!isNaN(current) && current < 24) {
+      setTempTargetHours((current + 1).toString());
+    }
+  };
+
+  const handleDecreaseHours = () => {
+    const current = parseInt(tempTargetHours, 10);
+    if (!isNaN(current) && current > 1) {
+      setTempTargetHours((current - 1).toString());
+    }
   };
 
   const formatDateTime = (timestamp: number) => {
@@ -427,28 +441,51 @@ export default function Home() {
                     Einstellungen
                   </Button>
                 </DialogTrigger>
-                <DialogContent data-testid="dialog-settings">
+                <DialogContent data-testid="dialog-settings" className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Einstellungen</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="target-hours">Zielzeit (in Stunden)</Label>
-                      <Input
-                        id="target-hours"
-                        type="number"
-                        min="1"
-                        max="24"
-                        value={tempTargetHours}
-                        onChange={(e) => setTempTargetHours(e.target.value)}
-                        data-testid="input-target-hours"
-                        placeholder="3"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Legen Sie fest, nach wie vielen Stunden Sie erinnert werden möchten (1-24 Stunden)
+                  <div className="space-y-6 py-6">
+                    <div className="space-y-4">
+                      <Label className="text-base font-semibold">Zielzeit festlegen</Label>
+                      <div className="flex items-center justify-center gap-4">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={handleDecreaseHours}
+                          disabled={parseInt(tempTargetHours, 10) <= 1}
+                          className="h-12 w-12 rounded-full"
+                          data-testid="button-decrease-hours"
+                        >
+                          <Minus className="h-5 w-5" />
+                        </Button>
+                        
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="text-6xl font-bold text-primary tabular-nums" data-testid="display-target-hours">
+                            {String(parseInt(tempTargetHours, 10) || 3).padStart(2, '0')}
+                          </div>
+                          <div className="text-sm text-muted-foreground font-medium">
+                            Stunden
+                          </div>
+                        </div>
+                        
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={handleIncreaseHours}
+                          disabled={parseInt(tempTargetHours, 10) >= 24}
+                          className="h-12 w-12 rounded-full"
+                          data-testid="button-increase-hours"
+                        >
+                          <Plus className="h-5 w-5" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-center text-muted-foreground">
+                        Wählen Sie zwischen 1 und 24 Stunden
                       </p>
                     </div>
-                    <div className="flex justify-end gap-2">
+                    
+                    <div className="flex justify-end gap-2 pt-4">
                       <Button
                         variant="outline"
                         onClick={() => setIsSettingsDialogOpen(false)}
