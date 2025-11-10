@@ -518,9 +518,9 @@ export default function Settings() {
                 <Minus className="h-5 w-5" />
               </Button>
               
-              {/* Large 2-digit display */}
+              {/* 2-digit display */}
               <div className="flex flex-col items-center gap-2">
-                <div className="text-6xl font-bold text-primary tabular-nums" data-testid="display-target-hours">
+                <div className="text-3xl font-bold text-primary tabular-nums" data-testid="display-target-hours">
                   {String(parseInt(tempTargetHours, 10) || TARGET_HOURS_CONFIG.DEFAULT).padStart(2, '0')}
                 </div>
                 <div className="text-sm text-muted-foreground font-medium">
