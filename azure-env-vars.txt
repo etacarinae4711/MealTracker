@@ -1,0 +1,16 @@
+# Azure App Service - Application Settings
+# Diese Werte müssen Sie im Azure Portal unter "Configuration" > "Application settings" eintragen
+
+DATABASE_URL=<Ihre PostgreSQL Connection String>
+PGDATABASE=<Ihre DB Name>
+PGHOST=<Ihr DB Host>
+PGPASSWORD=<Ihr DB Passwort>
+PGPORT=5432
+PGUSER=<Ihr DB User>
+SESSION_SECRET=<Generieren Sie einen zufälligen String>
+VAPID_PUBLIC_KEY=<Ihr VAPID Public Key>
+VAPID_PRIVATE_KEY=<Ihr VAPID Private Key>
+
+# Wichtig für Node.js Apps
+WEBSITE_NODE_DEFAULT_VERSION=~20
+SCM_DO_BUILD_DURING_DEPLOYMENT=true
