@@ -71,6 +71,38 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [lastMealTime]);
 
+  // Badge lokal aktualisieren basierend auf verstrichenen Stunden
+  useEffect(() => {
+    if (lastMealTime === null || !('setAppBadge' in navigator)) return;
+
+    let lastHourCount = -1;
+
+    const updateBadge = async () => {
+      const now = Date.now();
+      const elapsed = now - lastMealTime;
+      const hoursAgo = Math.min(Math.floor(elapsed / (60 * 60 * 1000)), 99);
+      
+      // Nur aktualisieren wenn sich die Stundenzahl geändert hat
+      if (hoursAgo !== lastHourCount) {
+        try {
+          await navigator.setAppBadge(hoursAgo);
+          console.log(`Badge updated locally to ${hoursAgo} hours`);
+          lastHourCount = hoursAgo;
+        } catch (error) {
+          console.log('Failed to update badge locally:', error);
+        }
+      }
+    };
+
+    // Sofort aktualisieren
+    updateBadge();
+
+    // Jede Minute überprüfen (um Stundenwechsel zu erfassen)
+    const interval = setInterval(updateBadge, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [lastMealTime]);
+
   const handleTrackMeal = async () => {
     const now = Date.now();
     const newEntry: MealEntry = {
