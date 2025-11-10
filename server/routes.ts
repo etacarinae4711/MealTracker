@@ -16,8 +16,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         keys: JSON.stringify(req.body.keys),
         lastMealTime: req.body.lastMealTime || null,
         lastDailyReminder: null,
-        quietHoursStart: req.body.quietHoursStart ?? 22,
-        quietHoursEnd: req.body.quietHoursEnd ?? 8,
       });
 
       const existing = await storage.getPushSubscriptionByEndpoint(validated.endpoint);
@@ -26,8 +24,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updatePushSubscription(existing.id, {
           keys: validated.keys,
           lastMealTime: validated.lastMealTime,
-          quietHoursStart: validated.quietHoursStart,
-          quietHoursEnd: validated.quietHoursEnd,
         });
         return res.json({ success: true, message: "Subscription updated" });
       }
@@ -87,35 +83,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Reset badge error:", error);
       res.status(400).json({ error: "Failed to reset badge" });
-    }
-  });
-
-  app.post("/api/push/update-quiet-hours", async (req, res) => {
-    try {
-      const { endpoint, quietHoursStart, quietHoursEnd } = req.body;
-      
-      if (!endpoint) {
-        return res.status(400).json({ error: "Endpoint is required" });
-      }
-      
-      if (quietHoursStart === undefined || quietHoursEnd === undefined) {
-        return res.status(400).json({ error: "Quiet hours start and end are required" });
-      }
-      
-      const subscription = await storage.getPushSubscriptionByEndpoint(endpoint);
-      
-      if (subscription) {
-        await storage.updatePushSubscription(subscription.id, {
-          quietHoursStart,
-          quietHoursEnd,
-        });
-        res.json({ success: true });
-      } else {
-        res.status(404).json({ error: "Subscription not found" });
-      }
-    } catch (error) {
-      console.error("Update quiet hours error:", error);
-      res.status(400).json({ error: "Failed to update quiet hours" });
     }
   });
 

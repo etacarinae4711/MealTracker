@@ -24,7 +24,6 @@ import {
   resetBadge,
 } from "@/lib/push-notifications";
 import { useMealTracker } from "@/hooks/use-meal-tracker";
-import { useLanguage } from "@/hooks/use-language";
 import {
   formatElapsedTime,
   calculateElapsedTime,
@@ -45,9 +44,6 @@ import { supportsBadgeAPI } from "@/types/meal-tracker";
 export default function Home() {
   // Meal tracking state managed by custom hook
   const { lastMealTime, trackMeal, targetHours } = useMealTracker();
-  
-  // Language state and translations
-  const { t } = useLanguage();
   
   // Local UI state for elapsed time (updated every second)
   const [elapsedTime, setElapsedTime] = useState<number>(0);
@@ -189,7 +185,7 @@ export default function Home() {
             Mealtracker
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
-            {t.lastMeal}
+            Verfolgen Sie die Zeit seit Ihrer letzten Mahlzeit
           </p>
         </div>
 
@@ -202,7 +198,7 @@ export default function Home() {
             data-testid="button-track-meal"
           >
             <Utensils className="mr-3 h-6 w-6" />
-            {t.trackMeal}
+            Track Meal
           </Button>
         </div>
 
@@ -218,7 +214,7 @@ export default function Home() {
               data-testid="timer-display"
             >
               <p className="text-sm font-semibold uppercase tracking-wide text-white mb-4">
-                {t.lastMeal}
+                Zeit seit letzter Mahlzeit
               </p>
               <p className="text-5xl md:text-6xl font-bold text-white" data-testid="timer-value">
                 {formatElapsedTime(elapsedTime)}
@@ -229,7 +225,7 @@ export default function Home() {
                 {/* Progress labels */}
                 <div className="flex justify-between text-xs text-white/90 font-medium">
                   <span>{progressHours}h {progressMinutes}m</span>
-                  <span>{targetHours}h {t.targetGoal}</span>
+                  <span>{targetHours}h Ziel</span>
                 </div>
                 
                 {/* Progress bar */}
@@ -239,7 +235,7 @@ export default function Home() {
                   aria-valuenow={Math.floor(progressPercentage)}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-label={`${progressPercentage}% ${t.targetGoal}`}
+                  aria-label={`Fortschritt bis zum ${targetHours}-Stunden-Ziel`}
                 >
                   <div 
                     className="h-full bg-white transition-all duration-300"
@@ -251,8 +247,8 @@ export default function Home() {
                 {/* Progress text */}
                 <p className="text-xs text-white/80 font-medium">
                   {progressPercentage >= 100 
-                    ? `${t.targetGoal}!` 
-                    : `${Math.floor(progressPercentage)}% - ${targetHours}h ${t.targetGoal}`
+                    ? "Ziel erreicht!" 
+                    : `${Math.floor(progressPercentage)}% bis zum ${targetHours}-Stunden-Ziel`
                   }
                 </p>
               </div>
@@ -264,13 +260,13 @@ export default function Home() {
         {lastMealTime === null && (
           <div className="rounded-2xl p-8 md:p-12 text-center bg-muted border border-border">
             <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
-              {t.lastMeal}
+              Zeit seit letzter Mahlzeit
             </p>
             <p className="text-5xl md:text-6xl font-bold text-muted-foreground">
               --:--:--
             </p>
             <p className="text-sm text-muted-foreground mt-4">
-              {t.noMealYet}
+              Klicken Sie auf "Track Meal" um zu beginnen
             </p>
           </div>
         )}

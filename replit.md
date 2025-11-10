@@ -6,41 +6,12 @@ Mealtracker is a minimal, mobile-first Progressive Web App (PWA) designed to tra
 
 ## Recent Changes (2025-11-10)
 
-### Multi-Language Support & Quiet Hours Feature
-- **Internationalization (i18n)**: Full support for 3 languages
-  - English, German (Deutsch), and Spanish (Español)
-  - All UI text externalized to `client/src/lib/translations.ts`
-  - Language selector in settings page
-  - Language preference persisted in localStorage
-  - Custom `useLanguage` hook for easy translation access
-  
-- **Quiet Hours Feature**: Configurable notification-free periods
-  - Default: 22:00-08:00 (10 PM - 8 AM)
-  - User-configurable start/end times in settings
-  - Supports overnight ranges (e.g., 22:00-08:00)
-  - Persisted in localStorage and PostgreSQL
-  - Backend scheduler respects quiet hours when sending notifications
-  - Database schema extended with `quietHoursStart` and `quietHoursEnd` columns
-
-- **Notification Improvements**:
-  - Hourly reminders (changed from every 5 minutes)
-  - Removed daily 9 AM reminder
-  - Notifications respect quiet hours configuration
-  - More user-friendly notification frequency
-
-- **Terminology Update**: "Target Hours" → "Minimum Time Between Meals"
-  - More accurate description of the feature's purpose
-  - Updated in all languages and UI components
-  - Improved user understanding of meal interval tracking
-
 ### Feature Complete Refactoring
 - **Code Organization**: Extracted shared logic into reusable modules
   - `client/src/lib/constants.ts` - Centralized configuration values
   - `client/src/lib/time-utils.ts` - Time formatting and calculation utilities
-  - `client/src/lib/translations.ts` - Multi-language translation system
   - `client/src/types/meal-tracker.ts` - TypeScript type definitions
   - `client/src/hooks/use-meal-tracker.ts` - Custom hook for meal state management
-  - `client/src/hooks/use-language.ts` - Custom hook for language management
   
 - **Documentation**: Added comprehensive JSDoc comments throughout codebase
   - Every function documented with purpose, parameters, and examples
@@ -49,9 +20,7 @@ Mealtracker is a minimal, mobile-first Progressive Web App (PWA) designed to tra
   
 - **Dedicated Settings Page**: Created `/settings` route consolidating all configuration
   - Push notification management
-  - Minimum time between meals configuration with +/- controls
-  - Quiet hours configuration with time selectors
-  - Language selection (EN/DE/ES)
+  - Target hours configuration with +/- controls
   - Last meal editing functionality
   - Complete meal history viewer
   
@@ -123,9 +92,9 @@ client/src/
 - No emojis in UI (design guideline requirement)
 
 **State Management:**
-- Custom hooks (`use-meal-tracker`, `use-language`) for centralized state logic
+- Custom hooks (`use-meal-tracker`) for centralized state logic
 - TanStack Query for server state management
-- Browser localStorage for persistent data (meals, settings, language, quiet hours)
+- Browser localStorage for persistent data (meals, settings)
 
 ### Backend Architecture
 
@@ -144,26 +113,20 @@ client/src/
 **Client-Side Storage (localStorage):**
 - `lastMealTime`: Unix timestamp of most recent meal
 - `mealHistory`: Array of meal entries with timestamps and UUIDs
-- `targetHours`: User's minimum interval between meals (1-24, default 3)
-- `language`: User's preferred language (en/de/es, default: en)
-- `quietHoursStart`: Start of quiet period (0-23, default: 22)
-- `quietHoursEnd`: End of quiet period (0-23, default: 8)
+- `targetHours`: User's goal interval (1-24, default 3)
 - Validation on load prevents corrupt data
 
 **Database (PostgreSQL):**
-- Push subscriptions table storing:
-  - Endpoint and encryption keys
-  - Last meal time for background tracking
-  - Quiet hours configuration (start/end times)
+- Push subscriptions table storing endpoint, keys, and last meal time
 - Drizzle ORM for type-safe queries
-- Schema migrations via `drizzle-kit`
+- Migrations via `drizzle-kit`
 
 **Push Notifications & Badge System:**
 - PWA app badge displays hours elapsed (0-99 maximum)
 - Local badge updates every minute (checks for hour changes)
 - Server-side hourly push notifications for background updates
-- Minimum interval reminder notifications (respects quiet hours)
-- Configurable quiet hours prevent nighttime notifications (default: 22:00-08:00)
+- Target-hour reminder notifications
+- Daily 9 AM reminder notifications
 
 ### Code Quality & Maintainability
 

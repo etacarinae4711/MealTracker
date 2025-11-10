@@ -20,15 +20,6 @@ export const STORAGE_KEYS = {
   
   /** User's target hours (1-24) for meal interval goals */
   TARGET_HOURS: "targetHours",
-  
-  /** User's preferred language (en, de, es) */
-  LANGUAGE: "language",
-  
-  /** Start hour for quiet hours (no notifications) */
-  QUIET_HOURS_START: "quietHoursStart",
-  
-  /** End hour for quiet hours (no notifications) */
-  QUIET_HOURS_END: "quietHoursEnd",
 } as const;
 
 /**
@@ -86,36 +77,4 @@ export const BADGE_CONFIG = {
 export const TIMER_CONFIG = {
   /** Update interval in milliseconds (updates every second) */
   UPDATE_INTERVAL_MS: TIME.SECOND_MS,
-} as const;
-
-/**
- * Language configuration
- * 
- * Defines supported languages and default language preference
- */
-export const LANGUAGE_CONFIG = {
-  /** Default language when no preference is set */
-  DEFAULT: 'en' as const,
-  
-  /** List of supported language codes */
-  SUPPORTED: ['en', 'de', 'es'] as const,
-} as const;
-
-/**
- * Quiet hours configuration
- * 
- * Defines default quiet hours during which no push notifications are sent
- */
-export const QUIET_HOURS_CONFIG = {
-  /** Default start hour (22:00 / 10 PM) */
-  DEFAULT_START: 22,
-  
-  /** Default end hour (08:00 / 8 AM) */
-  DEFAULT_END: 8,
-  
-  /** Minimum hour value (0 = midnight) */
-  MIN_HOUR: 0,
-  
-  /** Maximum hour value (23 = 11 PM) */
-  MAX_HOUR: 23,
 } as const;

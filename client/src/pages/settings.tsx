@@ -21,8 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Bell, BellOff, Plus, Minus, ArrowLeft, Clock, History, Pencil, Globe } from "lucide-react";
+import { Bell, BellOff, Plus, Minus, ArrowLeft, Clock, History, Pencil } from "lucide-react";
 import {
   registerPushNotifications,
   unregisterPushNotifications,
@@ -31,11 +30,9 @@ import {
 } from "@/lib/push-notifications";
 import { useToast } from "@/hooks/use-toast";
 import { useMealTracker } from "@/hooks/use-meal-tracker";
-import { useLanguage } from "@/hooks/use-language";
 import { formatDateTime } from "@/lib/time-utils";
-import { TARGET_HOURS_CONFIG, QUIET_HOURS_CONFIG, STORAGE_KEYS } from "@/lib/constants";
+import { TARGET_HOURS_CONFIG } from "@/lib/constants";
 import { supportsBadgeAPI } from "@/types/meal-tracker";
-import { Language } from "@/lib/translations";
 
 /**
  * Settings page component
@@ -56,16 +53,9 @@ export default function Settings() {
     updateTargetHours,
   } = useMealTracker();
   
-  // Language state and translations
-  const { language, t, setLanguage } = useLanguage();
-  
   // Local UI state for settings inputs
   const [tempTargetHours, setTempTargetHours] = useState<string>(targetHours.toString());
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  
-  // Quiet hours state
-  const [quietHoursStart, setQuietHoursStart] = useState<number>(QUIET_HOURS_CONFIG.DEFAULT_START);
-  const [quietHoursEnd, setQuietHoursEnd] = useState<number>(QUIET_HOURS_CONFIG.DEFAULT_END);
   
   // Dialog state
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
@@ -78,31 +68,13 @@ export default function Settings() {
   const { toast } = useToast();
 
   /**
-   * Effect: Initialize notification state and quiet hours
+   * Effect: Initialize notification state
    * 
    * Checks if push notifications are currently enabled
-   * and loads saved quiet hours from localStorage.
+   * and updates the UI state accordingly.
    */
   useEffect(() => {
     isPushNotificationEnabled().then(setNotificationsEnabled);
-    
-    // Load quiet hours from localStorage
-    const savedStart = localStorage.getItem(STORAGE_KEYS.QUIET_HOURS_START);
-    const savedEnd = localStorage.getItem(STORAGE_KEYS.QUIET_HOURS_END);
-    
-    if (savedStart !== null) {
-      const start = parseInt(savedStart, 10);
-      if (!isNaN(start) && start >= QUIET_HOURS_CONFIG.MIN_HOUR && start <= QUIET_HOURS_CONFIG.MAX_HOUR) {
-        setQuietHoursStart(start);
-      }
-    }
-    
-    if (savedEnd !== null) {
-      const end = parseInt(savedEnd, 10);
-      if (!isNaN(end) && end >= QUIET_HOURS_CONFIG.MIN_HOUR && end <= QUIET_HOURS_CONFIG.MAX_HOUR) {
-        setQuietHoursEnd(end);
-      }
-    }
   }, []);
 
   /**
@@ -133,8 +105,8 @@ export default function Settings() {
       await unregisterPushNotifications();
       setNotificationsEnabled(false);
       toast({
-        title: t.notificationsDisabled,
-        description: t.notificationsDescription,
+        title: "Benachrichtigungen deaktiviert",
+        description: "Sie erhalten keine Erinnerungen mehr",
       });
     } else {
       // Enable notifications
@@ -142,13 +114,13 @@ export default function Settings() {
       if (success) {
         setNotificationsEnabled(true);
         toast({
-          title: t.notificationsEnabled,
-          description: t.notificationsDescription,
+          title: "Benachrichtigungen aktiviert",
+          description: `Sie erhalten jetzt Erinnerungen nach ${targetHours}+ Stunden und tägliche Reminders`,
         });
       } else {
         toast({
-          title: t.permissionDenied,
-          description: t.permissionDenied,
+          title: "Fehler",
+          description: "Benachrichtigungen konnten nicht aktiviert werden",
           variant: "destructive",
         });
       }
@@ -195,8 +167,8 @@ export default function Settings() {
     // Validate input
     if (isNaN(hours) || hours < TARGET_HOURS_CONFIG.MIN || hours > TARGET_HOURS_CONFIG.MAX) {
       toast({
-        title: t.invalidInput,
-        description: `${TARGET_HOURS_CONFIG.MIN}-${TARGET_HOURS_CONFIG.MAX} ${t.hours}`,
+        title: "Ungültige Eingabe",
+        description: `Bitte geben Sie eine Zahl zwischen ${TARGET_HOURS_CONFIG.MIN} und ${TARGET_HOURS_CONFIG.MAX} ein`,
         variant: "destructive",
       });
       return;
@@ -206,76 +178,8 @@ export default function Settings() {
     updateTargetHours(hours);
     
     toast({
-      title: t.targetHoursSaved,
-      description: `${hours} ${t.hours}`,
-    });
-  };
-
-  /**
-   * Saves the quiet hours settings
-   * 
-   * Validates the input hours and persists them to localStorage.
-   * Also updates the server if push notifications are enabled.
-   * 
-   * Side effects:
-   * - Updates localStorage
-   * - May trigger server API call to update push subscription
-   * - Shows toast notification
-   */
-  const handleSaveQuietHours = async () => {
-    // Validate hours
-    if (quietHoursStart < QUIET_HOURS_CONFIG.MIN_HOUR || quietHoursStart > QUIET_HOURS_CONFIG.MAX_HOUR) {
-      toast({
-        title: t.invalidInput,
-        description: `${QUIET_HOURS_CONFIG.MIN_HOUR}-${QUIET_HOURS_CONFIG.MAX_HOUR}`,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (quietHoursEnd < QUIET_HOURS_CONFIG.MIN_HOUR || quietHoursEnd > QUIET_HOURS_CONFIG.MAX_HOUR) {
-      toast({
-        title: t.invalidInput,
-        description: `${QUIET_HOURS_CONFIG.MIN_HOUR}-${QUIET_HOURS_CONFIG.MAX_HOUR}`,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Save to localStorage
-    localStorage.setItem(STORAGE_KEYS.QUIET_HOURS_START, quietHoursStart.toString());
-    localStorage.setItem(STORAGE_KEYS.QUIET_HOURS_END, quietHoursEnd.toString());
-    
-    // Update server if notifications are enabled
-    if (notificationsEnabled) {
-      try {
-        // Get current push subscription to extract endpoint
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        
-        if (subscription) {
-          const response = await fetch('/api/push/update-quiet-hours', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              endpoint: subscription.endpoint,
-              quietHoursStart,
-              quietHoursEnd,
-            }),
-          });
-          
-          if (!response.ok) {
-            console.error('Failed to update quiet hours on server');
-          }
-        }
-      } catch (error) {
-        console.error('Error updating quiet hours:', error);
-      }
-    }
-    
-    toast({
-      title: t.quietHoursSaved,
-      description: `${String(quietHoursStart).padStart(2, '0')}:00 - ${String(quietHoursEnd).padStart(2, '0')}:00`,
+      title: "Einstellungen gespeichert",
+      description: `Zielzeit auf ${hours} Stunden gesetzt`,
     });
   };
 
@@ -295,8 +199,8 @@ export default function Settings() {
       setIsEditDialogOpen(true);
     } else {
       toast({
-        title: t.noMealYet,
-        description: t.noMealYet,
+        title: "Keine Mahlzeit",
+        description: "Bitte tracken Sie zuerst eine Mahlzeit",
         variant: "destructive",
       });
     }
@@ -343,8 +247,8 @@ export default function Settings() {
 
       setIsEditDialogOpen(false);
       toast({
-        title: t.mealTimeUpdated,
-        description: t.mealTimeUpdated,
+        title: "Mahlzeit aktualisiert",
+        description: "Die letzte Mahlzeit wurde bearbeitet",
       });
     }
   };
@@ -360,110 +264,20 @@ export default function Settings() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">{t.settings}</h1>
-            <p className="text-sm text-muted-foreground">{t.languageDescription}</p>
+            <h1 className="text-3xl font-bold">Einstellungen</h1>
+            <p className="text-sm text-muted-foreground">Passen Sie Ihre Präferenzen an</p>
           </div>
         </div>
-
-        {/* Language Selection Card */}
-        <Card data-testid="card-language">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              {t.language}
-            </CardTitle>
-            <CardDescription>
-              {t.languageDescription}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-3 gap-2">
-              {(['en', 'de', 'es'] as const).map((lang) => (
-                <Button
-                  key={lang}
-                  variant={language === lang ? "default" : "outline"}
-                  onClick={() => setLanguage(lang)}
-                  className="w-full"
-                  data-testid={`button-language-${lang}`}
-                >
-                  {t.languageNames[lang]}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quiet Hours Card */}
-        <Card data-testid="card-quiet-hours">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              {t.quietHours}
-            </CardTitle>
-            <CardDescription>
-              {t.quietHoursDescription}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="quiet-start">{t.quietHoursStart}</Label>
-                <select
-                  id="quiet-start"
-                  value={quietHoursStart}
-                  onChange={(e) => setQuietHoursStart(parseInt(e.target.value, 10))}
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  data-testid="select-quiet-start"
-                >
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>
-                      {String(i).padStart(2, '0')}:00
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="quiet-end">{t.quietHoursEnd}</Label>
-                <select
-                  id="quiet-end"
-                  value={quietHoursEnd}
-                  onChange={(e) => setQuietHoursEnd(parseInt(e.target.value, 10))}
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  data-testid="select-quiet-end"
-                >
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>
-                      {String(i).padStart(2, '0')}:00
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            <p className="text-xs text-center text-muted-foreground">
-              {String(quietHoursStart).padStart(2, '0')}:00 - {String(quietHoursEnd).padStart(2, '0')}:00
-            </p>
-            
-            <Button
-              onClick={handleSaveQuietHours}
-              className="w-full"
-              data-testid="button-save-quiet-hours"
-            >
-              {t.save}
-            </Button>
-          </CardContent>
-        </Card>
 
         {/* Notifications Card */}
         <Card data-testid="card-notifications">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
-              {t.notifications}
+              Benachrichtigungen
             </CardTitle>
             <CardDescription>
-              {t.notificationsDescription}
+              Push-Benachrichtigungen für Erinnerungen
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -476,18 +290,18 @@ export default function Settings() {
               {notificationsEnabled ? (
                 <>
                   <Bell className="mr-2 h-4 w-4" />
-                  {t.enableNotifications}
+                  Benachrichtigungen aktiv
                 </>
               ) : (
                 <>
                   <BellOff className="mr-2 h-4 w-4" />
-                  {t.enableNotifications}
+                  Benachrichtigungen aktivieren
                 </>
               )}
             </Button>
             {notificationsEnabled && (
               <p className="text-xs text-muted-foreground mt-3 text-center">
-                {t.notificationsDescription}
+                Sie erhalten Erinnerungen nach {targetHours}+ Stunden und tägliche Reminders um 9:00 Uhr
               </p>
             )}
           </CardContent>
@@ -498,10 +312,10 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              {t.targetHours}
+              Zielzeit festlegen
             </CardTitle>
             <CardDescription>
-              {t.targetHoursDescription}
+              Nach wie vielen Stunden möchten Sie erinnert werden?
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -518,13 +332,13 @@ export default function Settings() {
                 <Minus className="h-5 w-5" />
               </Button>
               
-              {/* 2-digit display */}
+              {/* Large 2-digit display */}
               <div className="flex flex-col items-center gap-2">
-                <div className="text-3xl font-bold text-primary tabular-nums" data-testid="display-target-hours">
+                <div className="text-6xl font-bold text-primary tabular-nums" data-testid="display-target-hours">
                   {String(parseInt(tempTargetHours, 10) || TARGET_HOURS_CONFIG.DEFAULT).padStart(2, '0')}
                 </div>
                 <div className="text-sm text-muted-foreground font-medium">
-                  {t.hours}
+                  Stunden
                 </div>
               </div>
               
@@ -541,7 +355,7 @@ export default function Settings() {
             </div>
             
             <p className="text-xs text-center text-muted-foreground">
-              {TARGET_HOURS_CONFIG.MIN}-{TARGET_HOURS_CONFIG.MAX} {t.hours}
+              Wählen Sie zwischen {TARGET_HOURS_CONFIG.MIN} und {TARGET_HOURS_CONFIG.MAX} Stunden
             </p>
             
             <Button
@@ -549,7 +363,7 @@ export default function Settings() {
               className="w-full"
               data-testid="button-save-target-hours"
             >
-              {t.save}
+              Speichern
             </Button>
           </CardContent>
         </Card>
@@ -560,16 +374,16 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Pencil className="h-5 w-5" />
-                {t.editLastMeal}
+                Letzte Mahlzeit bearbeiten
               </CardTitle>
               <CardDescription>
-                {t.editLastMealDescription}
+                Aktualisieren Sie die Zeit Ihrer letzten Mahlzeit
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="text-sm">
-                  <span className="text-muted-foreground">{t.lastMeal}: </span>
+                  <span className="text-muted-foreground">Letzte Mahlzeit: </span>
                   <span className="font-medium">{formatDateTime(lastMealTime)}</span>
                 </div>
                 <Button
@@ -579,7 +393,7 @@ export default function Settings() {
                   data-testid="button-edit-meal"
                 >
                   <Pencil className="mr-2 h-4 w-4" />
-                  {t.edit}
+                  Zeit ändern
                 </Button>
               </div>
             </CardContent>
@@ -591,10 +405,10 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
-              {t.mealHistory}
+              Mahlzeiten-Historie
             </CardTitle>
             <CardDescription>
-              {t.mealHistoryDescription}
+              Alle aufgezeichneten Mahlzeiten anzeigen
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -605,7 +419,7 @@ export default function Settings() {
               data-testid="button-show-history"
             >
               <History className="mr-2 h-4 w-4" />
-              {t.viewHistory} ({mealHistory.length})
+              Historie anzeigen ({mealHistory.length})
             </Button>
           </CardContent>
         </Card>
@@ -614,11 +428,11 @@ export default function Settings() {
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent data-testid="dialog-edit-meal">
             <DialogHeader>
-              <DialogTitle>{t.editLastMeal}</DialogTitle>
+              <DialogTitle>Letzte Mahlzeit bearbeiten</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-date">{t.edit}</Label>
+                <Label htmlFor="edit-date">Datum</Label>
                 <Input
                   id="edit-date"
                   type="date"
@@ -628,7 +442,7 @@ export default function Settings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-time">{t.edit}</Label>
+                <Label htmlFor="edit-time">Uhrzeit</Label>
                 <Input
                   id="edit-time"
                   type="time"
@@ -643,13 +457,13 @@ export default function Settings() {
                   onClick={() => setIsEditDialogOpen(false)}
                   data-testid="button-cancel-edit"
                 >
-                  {t.cancel}
+                  Abbrechen
                 </Button>
                 <Button
                   onClick={handleSaveEdit}
                   data-testid="button-save-edit"
                 >
-                  {t.save}
+                  Speichern
                 </Button>
               </div>
             </div>
@@ -660,12 +474,12 @@ export default function Settings() {
         <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
           <DialogContent data-testid="dialog-history" className="max-w-md">
             <DialogHeader>
-              <DialogTitle>{t.historyTitle}</DialogTitle>
+              <DialogTitle>Mahlzeiten-Historie</DialogTitle>
             </DialogHeader>
             <ScrollArea className="h-[400px] pr-4">
               {mealHistory.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  {t.noHistory}
+                  Noch keine Mahlzeiten aufgezeichnet
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -678,16 +492,16 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-semibold text-foreground">
-                            {t.lastMeal} {mealHistory.length - index}
+                            Mahlzeit {mealHistory.length - index}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {formatDateTime(meal.timestamp)}
                           </p>
                         </div>
                         {index === 0 && (
-                          <Badge variant="default" data-testid="badge-current">
-                            {t.currentMeal}
-                          </Badge>
+                          <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-md">
+                            Aktuell
+                          </span>
                         )}
                       </div>
                     </div>
