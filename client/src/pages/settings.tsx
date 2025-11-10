@@ -1,3 +1,18 @@
+/**
+ * Settings Page Component - Mealtracker
+ * 
+ * Centralized settings page providing configuration for:
+ * - Push notification management (enable/disable)
+ * - Target hours configuration (1-24 hour range)
+ * - Last meal editing (date and time adjustment)
+ * - Complete meal history viewing
+ * 
+ * The page uses a card-based layout for clear organization
+ * of different settings categories.
+ * 
+ * @module pages/settings
+ */
+
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -7,55 +22,86 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bell, BellOff, Plus, Minus, ArrowLeft, Clock, History, Pencil } from "lucide-react";
-import { registerPushNotifications, unregisterPushNotifications, isPushNotificationEnabled, updateMealTime } from "@/lib/push-notifications";
+import {
+  registerPushNotifications,
+  unregisterPushNotifications,
+  isPushNotificationEnabled,
+  updateMealTime,
+} from "@/lib/push-notifications";
 import { useToast } from "@/hooks/use-toast";
+import { useMealTracker } from "@/hooks/use-meal-tracker";
+import { formatDateTime } from "@/lib/time-utils";
+import { TARGET_HOURS_CONFIG } from "@/lib/constants";
+import { supportsBadgeAPI } from "@/types/meal-tracker";
 
-interface MealEntry {
-  timestamp: number;
-  id: string;
-}
-
+/**
+ * Settings page component
+ * 
+ * Provides a comprehensive settings interface organized into cards:
+ * 1. Notifications - Toggle push notifications
+ * 2. Target Hours - Configure meal interval goal
+ * 3. Edit Last Meal - Adjust timestamp of most recent meal
+ * 4. History - View all tracked meals
+ */
 export default function Settings() {
-  const [lastMealTime, setLastMealTime] = useState<number | null>(null);
-  const [mealHistory, setMealHistory] = useState<MealEntry[]>([]);
-  const [targetHours, setTargetHours] = useState<number>(3);
-  const [tempTargetHours, setTempTargetHours] = useState<string>("3");
+  // Meal tracking state from custom hook
+  const {
+    lastMealTime,
+    mealHistory,
+    targetHours,
+    updateLastMealTime,
+    updateTargetHours,
+  } = useMealTracker();
+  
+  // Local UI state for settings inputs
+  const [tempTargetHours, setTempTargetHours] = useState<string>(targetHours.toString());
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  
+  // Dialog state
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // Edit form state
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
+  
   const { toast } = useToast();
 
+  /**
+   * Effect: Initialize notification state
+   * 
+   * Checks if push notifications are currently enabled
+   * and updates the UI state accordingly.
+   */
   useEffect(() => {
-    const stored = localStorage.getItem("lastMealTime");
-    if (stored) {
-      setLastMealTime(parseInt(stored, 10));
-    }
-
-    const storedHistory = localStorage.getItem("mealHistory");
-    if (storedHistory) {
-      setMealHistory(JSON.parse(storedHistory));
-    }
-
-    const storedTargetHours = localStorage.getItem("targetHours");
-    if (storedTargetHours) {
-      const hours = parseInt(storedTargetHours, 10);
-      if (!isNaN(hours) && hours >= 1 && hours <= 24) {
-        setTargetHours(hours);
-        setTempTargetHours(hours.toString());
-      } else {
-        localStorage.setItem("targetHours", "3");
-        setTargetHours(3);
-        setTempTargetHours("3");
-      }
-    }
-
     isPushNotificationEnabled().then(setNotificationsEnabled);
   }, []);
 
+  /**
+   * Effect: Sync tempTargetHours with actual targetHours
+   * 
+   * Ensures the input field displays the current saved value
+   * when the component mounts or targetHours changes externally.
+   */
+  useEffect(() => {
+    setTempTargetHours(targetHours.toString());
+  }, [targetHours]);
+
+  /**
+   * Toggles push notifications on/off
+   * 
+   * Actions:
+   * - If enabled: Unregisters service worker and disables notifications
+   * - If disabled: Registers service worker and enables notifications
+   * 
+   * Side effects:
+   * - Registers/unregisters service worker
+   * - Updates server-side push subscription
+   * - Shows toast notification with result
+   */
   const handleToggleNotifications = async () => {
     if (notificationsEnabled) {
+      // Disable notifications
       await unregisterPushNotifications();
       setNotificationsEnabled(false);
       toast({
@@ -63,6 +109,7 @@ export default function Settings() {
         description: "Sie erhalten keine Erinnerungen mehr",
       });
     } else {
+      // Enable notifications
       const success = await registerPushNotifications(lastMealTime || undefined);
       if (success) {
         setNotificationsEnabled(true);
@@ -80,34 +127,55 @@ export default function Settings() {
     }
   };
 
+  /**
+   * Increases target hours by 1 (with validation)
+   * 
+   * Maximum value is TARGET_HOURS_CONFIG.MAX (24 hours)
+   */
   const handleIncreaseHours = () => {
     const current = parseInt(tempTargetHours, 10);
-    if (!isNaN(current) && current < 24) {
+    if (!isNaN(current) && current < TARGET_HOURS_CONFIG.MAX) {
       setTempTargetHours((current + 1).toString());
     }
   };
 
+  /**
+   * Decreases target hours by 1 (with validation)
+   * 
+   * Minimum value is TARGET_HOURS_CONFIG.MIN (1 hour)
+   */
   const handleDecreaseHours = () => {
     const current = parseInt(tempTargetHours, 10);
-    if (!isNaN(current) && current > 1) {
+    if (!isNaN(current) && current > TARGET_HOURS_CONFIG.MIN) {
       setTempTargetHours((current - 1).toString());
     }
   };
 
+  /**
+   * Saves the target hours setting
+   * 
+   * Validates the input is within allowed range (1-24)
+   * and persists the value via the useMealTracker hook.
+   * 
+   * Side effects:
+   * - Updates localStorage (via hook)
+   * - Shows toast notification
+   */
   const handleSaveTargetHours = () => {
     const hours = parseInt(tempTargetHours, 10);
     
-    if (isNaN(hours) || hours < 1 || hours > 24) {
+    // Validate input
+    if (isNaN(hours) || hours < TARGET_HOURS_CONFIG.MIN || hours > TARGET_HOURS_CONFIG.MAX) {
       toast({
         title: "Ungültige Eingabe",
-        description: "Bitte geben Sie eine Zahl zwischen 1 und 24 ein",
+        description: `Bitte geben Sie eine Zahl zwischen ${TARGET_HOURS_CONFIG.MIN} und ${TARGET_HOURS_CONFIG.MAX} ein`,
         variant: "destructive",
       });
       return;
     }
 
-    setTargetHours(hours);
-    localStorage.setItem("targetHours", hours.toString());
+    // Save via hook (persists to localStorage)
+    updateTargetHours(hours);
     
     toast({
       title: "Einstellungen gespeichert",
@@ -115,6 +183,12 @@ export default function Settings() {
     });
   };
 
+  /**
+   * Opens the edit dialog with current meal time
+   * 
+   * Populates the date and time inputs with the last meal's timestamp.
+   * Shows error if no meal has been tracked yet.
+   */
   const handleEditMeal = () => {
     if (lastMealTime) {
       const date = new Date(lastMealTime);
@@ -132,20 +206,41 @@ export default function Settings() {
     }
   };
 
+  /**
+   * Saves the edited meal time
+   * 
+   * Actions performed:
+   * 1. Combines date and time inputs into timestamp
+   * 2. Updates last meal time via hook (persists to localStorage and history)
+   * 3. Updates app badge with new hours count
+   * 4. If notifications enabled, syncs with server
+   * 
+   * Side effects:
+   * - Updates localStorage (via hook)
+   * - Updates app badge
+   * - May trigger server API call
+   * - Shows toast notification
+   */
   const handleSaveEdit = async () => {
     if (editDate && editTime) {
+      // Combine date and time into timestamp
       const dateTimeStr = `${editDate}T${editTime}:00`;
       const newTime = new Date(dateTimeStr).getTime();
-      setLastMealTime(newTime);
-      localStorage.setItem("lastMealTime", newTime.toString());
+      
+      // Update via hook (persists to localStorage and history)
+      updateLastMealTime(newTime);
 
-      if (mealHistory.length > 0) {
-        const updatedHistory = [...mealHistory];
-        updatedHistory[0] = { ...updatedHistory[0], timestamp: newTime };
-        setMealHistory(updatedHistory);
-        localStorage.setItem("mealHistory", JSON.stringify(updatedHistory));
+      // Update badge with new hours count
+      if (supportsBadgeAPI(navigator)) {
+        try {
+          const hoursAgo = Math.floor((Date.now() - newTime) / (60 * 60 * 1000));
+          await navigator.setAppBadge(hoursAgo);
+        } catch (error) {
+          console.log('Failed to update badge:', error);
+        }
       }
 
+      // Sync with server if notifications enabled
       if (notificationsEnabled) {
         await updateMealTime(newTime);
       }
@@ -158,23 +253,10 @@ export default function Settings() {
     }
   };
 
-  const formatDateTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    const dateStr = date.toLocaleDateString("de-DE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-    const timeStr = date.toLocaleTimeString("de-DE", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    return `${dateStr} um ${timeStr}`;
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto p-6 space-y-6">
+        {/* Header with back button */}
         <div className="flex items-center gap-4">
           <Link href="/">
             <Button variant="ghost" size="icon" data-testid="button-back">
@@ -187,6 +269,7 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Notifications Card */}
         <Card data-testid="card-notifications">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -224,6 +307,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
+        {/* Target Hours Card */}
         <Card data-testid="card-target-hours">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -235,21 +319,23 @@ export default function Settings() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Number picker with +/- buttons */}
             <div className="flex items-center justify-center gap-4">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={handleDecreaseHours}
-                disabled={parseInt(tempTargetHours, 10) <= 1}
+                disabled={parseInt(tempTargetHours, 10) <= TARGET_HOURS_CONFIG.MIN}
                 className="h-12 w-12 rounded-full"
                 data-testid="button-decrease-hours"
               >
                 <Minus className="h-5 w-5" />
               </Button>
               
+              {/* Large 2-digit display */}
               <div className="flex flex-col items-center gap-2">
                 <div className="text-6xl font-bold text-primary tabular-nums" data-testid="display-target-hours">
-                  {String(parseInt(tempTargetHours, 10) || 3).padStart(2, '0')}
+                  {String(parseInt(tempTargetHours, 10) || TARGET_HOURS_CONFIG.DEFAULT).padStart(2, '0')}
                 </div>
                 <div className="text-sm text-muted-foreground font-medium">
                   Stunden
@@ -260,16 +346,18 @@ export default function Settings() {
                 variant="outline"
                 size="icon"
                 onClick={handleIncreaseHours}
-                disabled={parseInt(tempTargetHours, 10) >= 24}
+                disabled={parseInt(tempTargetHours, 10) >= TARGET_HOURS_CONFIG.MAX}
                 className="h-12 w-12 rounded-full"
                 data-testid="button-increase-hours"
               >
                 <Plus className="h-5 w-5" />
               </Button>
             </div>
+            
             <p className="text-xs text-center text-muted-foreground">
-              Wählen Sie zwischen 1 und 24 Stunden
+              Wählen Sie zwischen {TARGET_HOURS_CONFIG.MIN} und {TARGET_HOURS_CONFIG.MAX} Stunden
             </p>
+            
             <Button
               onClick={handleSaveTargetHours}
               className="w-full"
@@ -280,6 +368,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
+        {/* Edit Last Meal Card - only shown when meal exists */}
         {lastMealTime && (
           <Card data-testid="card-edit-meal">
             <CardHeader>
@@ -311,6 +400,7 @@ export default function Settings() {
           </Card>
         )}
 
+        {/* History Card */}
         <Card data-testid="card-history">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -334,6 +424,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
+        {/* Edit Meal Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent data-testid="dialog-edit-meal">
             <DialogHeader>
@@ -379,6 +470,7 @@ export default function Settings() {
           </DialogContent>
         </Dialog>
 
+        {/* History Dialog */}
         <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
           <DialogContent data-testid="dialog-history" className="max-w-md">
             <DialogHeader>

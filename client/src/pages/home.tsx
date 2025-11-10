@@ -1,71 +1,103 @@
+/**
+ * Home Page Component - Mealtracker
+ * 
+ * The main page of the application that provides:
+ * - A prominent "Track Meal" button to record new meals
+ * - Real-time timer display showing elapsed time since last meal
+ * - Visual progress indicator (red when under target, green when reached)
+ * - Progress bar showing percentage towards target goal
+ * - Quick access to settings via icon button
+ * 
+ * The component automatically updates every second to show elapsed time
+ * and manages the PWA app badge to display hours since last meal.
+ * 
+ * @module pages/home
+ */
+
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Utensils, Settings as SettingsIcon } from "lucide-react";
-import { isPushNotificationEnabled, updateMealTime, resetBadge } from "@/lib/push-notifications";
+import {
+  isPushNotificationEnabled,
+  updateMealTime,
+  resetBadge,
+} from "@/lib/push-notifications";
+import { useMealTracker } from "@/hooks/use-meal-tracker";
+import {
+  formatElapsedTime,
+  calculateElapsedTime,
+  getHoursAndMinutes,
+  calculateProgress,
+  millisecondsToHours,
+} from "@/lib/time-utils";
+import { BADGE_CONFIG, TIMER_CONFIG, TIME, TARGET_HOURS_CONFIG } from "@/lib/constants";
+import { supportsBadgeAPI } from "@/types/meal-tracker";
 
-interface MealEntry {
-  timestamp: number;
-  id: string;
-}
-
+/**
+ * Home page component
+ * 
+ * Displays the meal tracking interface with real-time updates.
+ * Coordinates between UI state, localStorage persistence (via hook),
+ * and PWA features (badges, push notifications).
+ */
 export default function Home() {
-  const [lastMealTime, setLastMealTime] = useState<number | null>(null);
+  // Meal tracking state managed by custom hook
+  const { lastMealTime, trackMeal, targetHours } = useMealTracker();
+  
+  // Local UI state for elapsed time (updated every second)
   const [elapsedTime, setElapsedTime] = useState<number>(0);
-  const [mealHistory, setMealHistory] = useState<MealEntry[]>([]);
-  const [targetHours, setTargetHours] = useState<number>(3);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("lastMealTime");
-    if (stored) {
-      setLastMealTime(parseInt(stored, 10));
-    }
-
-    const storedHistory = localStorage.getItem("mealHistory");
-    if (storedHistory) {
-      setMealHistory(JSON.parse(storedHistory));
-    }
-
-    const storedTargetHours = localStorage.getItem("targetHours");
-    if (storedTargetHours) {
-      const hours = parseInt(storedTargetHours, 10);
-      if (!isNaN(hours) && hours >= 1 && hours <= 24) {
-        setTargetHours(hours);
-      } else {
-        localStorage.setItem("targetHours", "3");
-        setTargetHours(3);
-      }
-    }
-  }, []);
-
+  /**
+   * Effect: Update elapsed time display
+   * 
+   * Sets up an interval that updates the elapsed time every second.
+   * This creates the real-time timer effect in the UI.
+   * 
+   * Dependencies:
+   * - lastMealTime: When this changes, restart the timer from zero
+   */
   useEffect(() => {
     if (lastMealTime === null) return;
 
     const updateElapsed = () => {
-      const now = Date.now();
-      const elapsed = now - lastMealTime;
+      const elapsed = calculateElapsedTime(lastMealTime);
       setElapsedTime(elapsed);
     };
 
+    // Update immediately
     updateElapsed();
 
-    const interval = setInterval(updateElapsed, 1000);
+    // Then update every second
+    const interval = setInterval(updateElapsed, TIMER_CONFIG.UPDATE_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [lastMealTime]);
 
-  // Badge lokal aktualisieren basierend auf verstrichenen Stunden
+  /**
+   * Effect: Update PWA app badge
+   * 
+   * Manages the app badge to show hours since last meal.
+   * Updates every minute to check for hour changes.
+   * 
+   * Badge behavior:
+   * - Shows 0-99 hours
+   * - Only updates when the hour count changes (reduces API calls)
+   * - Automatically clears when no meal is tracked
+   * 
+   * Dependencies:
+   * - lastMealTime: When this changes, recalculate badge
+   */
   useEffect(() => {
-    if (lastMealTime === null || !('setAppBadge' in navigator)) return;
+    if (lastMealTime === null || !supportsBadgeAPI(navigator)) return;
 
     let lastHourCount = -1;
 
     const updateBadge = async () => {
-      const now = Date.now();
-      const elapsed = now - lastMealTime;
-      const hoursAgo = Math.min(Math.floor(elapsed / (60 * 60 * 1000)), 99);
+      const elapsed = calculateElapsedTime(lastMealTime);
+      const hoursAgo = millisecondsToHours(elapsed, BADGE_CONFIG.MAX_DISPLAY);
       
-      // Nur aktualisieren wenn sich die Stundenzahl geändert hat
+      // Only update if hours changed (prevents unnecessary API calls)
       if (hoursAgo !== lastHourCount) {
         try {
           await navigator.setAppBadge(hoursAgo);
@@ -77,31 +109,38 @@ export default function Home() {
       }
     };
 
-    // Sofort aktualisieren
+    // Update immediately
     updateBadge();
 
-    // Jede Minute überprüfen (um Stundenwechsel zu erfassen)
-    const interval = setInterval(updateBadge, 60 * 1000);
+    // Check every minute for hour changes
+    const interval = setInterval(updateBadge, BADGE_CONFIG.UPDATE_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [lastMealTime]);
 
+  /**
+   * Handles tracking a new meal
+   * 
+   * Actions performed:
+   * 1. Creates new meal entry via hook (persists to localStorage)
+   * 2. Resets elapsed time to zero
+   * 3. Clears app badge (sets to 0)
+   * 4. If push notifications enabled, syncs with server
+   * 
+   * Side effects:
+   * - Updates localStorage (via useMealTracker hook)
+   * - Updates app badge
+   * - May trigger server API call for push notification sync
+   */
   const handleTrackMeal = async () => {
-    const now = Date.now();
-    const newEntry: MealEntry = {
-      timestamp: now,
-      id: crypto.randomUUID(),
-    };
-
-    const updatedHistory = [newEntry, ...mealHistory];
-    setLastMealTime(now);
-    setMealHistory(updatedHistory);
-    localStorage.setItem("lastMealTime", now.toString());
-    localStorage.setItem("mealHistory", JSON.stringify(updatedHistory));
+    // Create new meal entry (hook handles persistence)
+    trackMeal();
+    
+    // Reset UI state
     setElapsedTime(0);
 
-    // Badge auf 0 zurücksetzen (lokal)
-    if ('setAppBadge' in navigator) {
+    // Clear app badge (local)
+    if (supportsBadgeAPI(navigator)) {
       try {
         await navigator.setAppBadge(0);
       } catch (error) {
@@ -109,33 +148,30 @@ export default function Home() {
       }
     }
 
-    // Badge-Update an Server senden (wenn Notifications aktiviert sind)
+    // Sync with server if push notifications are enabled
     const isEnabled = await isPushNotificationEnabled();
     if (isEnabled) {
-      await updateMealTime(now);
+      await updateMealTime(Date.now());
       await resetBadge();
     }
   };
 
-  const formatTime = (milliseconds: number) => {
-    const totalSeconds = Math.floor(milliseconds / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  };
-
-  const safeTargetHours = Math.max(1, Math.min(24, targetHours));
-  const targetMilliseconds = safeTargetHours * 60 * 60 * 1000;
+  // Calculate progress and visual state
+  // Clamp target hours to valid range for safety
+  const safeTargetHours = Math.max(
+    TARGET_HOURS_CONFIG.MIN,
+    Math.min(TARGET_HOURS_CONFIG.MAX, targetHours)
+  );
+  
+  const targetMilliseconds = safeTargetHours * TIME.HOUR_MS;
   const isGreen = elapsedTime >= targetMilliseconds;
   
-  const progressPercentage = Math.min((elapsedTime / targetMilliseconds) * 100, 100);
-  
-  const progressHours = Math.floor(elapsedTime / (60 * 60 * 1000));
-  const progressMinutes = Math.floor((elapsedTime % (60 * 60 * 1000)) / (60 * 1000));
+  const progressPercentage = calculateProgress(elapsedTime, safeTargetHours);
+  const { hours: progressHours, minutes: progressMinutes } = getHoursAndMinutes(elapsedTime);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 md:p-8 relative">
+      {/* Settings button - positioned absolutely in top-right */}
       <Link href="/settings" className="absolute top-4 right-4">
         <Button variant="ghost" size="icon" data-testid="button-settings">
           <SettingsIcon className="h-5 w-5" />
@@ -143,6 +179,7 @@ export default function Home() {
       </Link>
 
       <div className="w-full max-w-md space-y-8">
+        {/* Header section */}
         <div className="text-center">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">
             Mealtracker
@@ -152,6 +189,7 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Track Meal button - primary action */}
         <div className="flex flex-col items-center gap-3">
           <Button
             onClick={handleTrackMeal}
@@ -164,6 +202,7 @@ export default function Home() {
           </Button>
         </div>
 
+        {/* Timer display - shows when meal has been tracked */}
         {lastMealTime !== null && (
           <div className="space-y-4">
             <div
@@ -178,14 +217,18 @@ export default function Home() {
                 Zeit seit letzter Mahlzeit
               </p>
               <p className="text-5xl md:text-6xl font-bold text-white" data-testid="timer-value">
-                {formatTime(elapsedTime)}
+                {formatElapsedTime(elapsedTime)}
               </p>
               
+              {/* Progress information */}
               <div className="mt-6 space-y-2">
+                {/* Progress labels */}
                 <div className="flex justify-between text-xs text-white/90 font-medium">
                   <span>{progressHours}h {progressMinutes}m</span>
                   <span>{targetHours}h Ziel</span>
                 </div>
+                
+                {/* Progress bar */}
                 <div 
                   className="relative h-3 w-full overflow-hidden rounded-full bg-white/20"
                   role="progressbar"
@@ -200,14 +243,20 @@ export default function Home() {
                     data-testid="progress-bar"
                   />
                 </div>
+                
+                {/* Progress text */}
                 <p className="text-xs text-white/80 font-medium">
-                  {progressPercentage >= 100 ? "Ziel erreicht!" : `${Math.floor(progressPercentage)}% bis zum ${targetHours}-Stunden-Ziel`}
+                  {progressPercentage >= 100 
+                    ? "Ziel erreicht!" 
+                    : `${Math.floor(progressPercentage)}% bis zum ${targetHours}-Stunden-Ziel`
+                  }
                 </p>
               </div>
             </div>
           </div>
         )}
 
+        {/* Placeholder display - shows when no meal tracked */}
         {lastMealTime === null && (
           <div className="rounded-2xl p-8 md:p-12 text-center bg-muted border border-border">
             <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
