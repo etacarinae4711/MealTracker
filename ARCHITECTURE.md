@@ -31,17 +31,19 @@ client/src/
 │   └── ui/              # Shadcn UI Komponenten (Radix UI + Tailwind)
 │
 ├── hooks/
-│   └── use-meal-tracker.ts    # Zentraler State Management Hook
+│   ├── use-meal-tracker.ts    # Zentraler State Management Hook
+│   └── use-language.ts        # Multi-Language State Management
 │
 ├── lib/
-│   ├── constants.ts           # App-weite Konstanten
+│   ├── constants.ts           # App-weite Konstanten (inkl. i18n)
+│   ├── translations.ts        # Multi-Language Übersetzungen (EN/DE/ES)
 │   ├── time-utils.ts          # Zeit-Berechnungen und Formatierung
 │   ├── push-notifications.ts  # Push API und Service Worker
 │   └── queryClient.ts         # TanStack Query Konfiguration
 │
 ├── pages/
-│   ├── home.tsx              # Hauptseite mit Timer
-│   └── settings.tsx          # Einstellungen & Historie
+│   ├── home.tsx              # Hauptseite mit Timer (lokalisiert)
+│   └── settings.tsx          # Einstellungen & Historie (lokalisiert)
 │
 └── types/
     └── meal-tracker.ts       # TypeScript Interfaces und Type Guards
@@ -56,8 +58,9 @@ server/
 
 ### Frontend Layer
 
-#### 1. Custom Hook: `useMealTracker`
+#### 1. Custom Hooks
 
+##### `useMealTracker`
 **Verantwortlichkeit:**
 - Verwaltet kompletten Meal-State (lastMealTime, history, targetHours)
 - Synchronisiert mit localStorage
@@ -80,6 +83,31 @@ server/
 - Validiert targetHours gegen MIN/MAX Konstanten
 - Fügt UUIDs automatisch zu MealEntries hinzu
 
+##### `useLanguage`
+**Verantwortlichkeit:**
+- Verwaltet die aktuelle UI-Sprache
+- Persistiert Sprachauswahl in localStorage
+- Stellt Übersetzungsfunktion bereit
+
+**Bereitgestellte API:**
+```typescript
+{
+  language: Language,        // 'en' | 'de' | 'es'
+  setLanguage: (lang: Language) => void,
+  t: Translations           // Übersetzungsobjekt
+}
+```
+
+**Unterstützte Sprachen:**
+- English (en) - Default
+- Deutsch (de)
+- Español (es)
+
+**Design-Entscheidungen:**
+- Englisch als Default-Sprache
+- Automatisches Laden der gespeicherten Sprache beim Mount
+- Type-safe Übersetzungsschlüssel via TypeScript Interface
+
 #### 2. Utility Module
 
 ##### `constants.ts`
@@ -90,7 +118,8 @@ server/
 STORAGE_KEYS = {
   LAST_MEAL_TIME: 'lastMealTime',
   MEAL_HISTORY: 'mealHistory',
-  TARGET_HOURS: 'targetHours'
+  TARGET_HOURS: 'targetHours',
+  LANGUAGE: 'language'           // Neue: Spracheinstellung
 }
 
 // Zeit-Konstanten
@@ -106,6 +135,59 @@ BADGE_CONFIG = {
   MIN_HOURS: 0,
   MAX_HOURS: 99
 }
+
+// i18n Konfiguration
+LANGUAGE_CONFIG = {
+  DEFAULT: 'en',
+  SUPPORTED: ['en', 'de', 'es']
+}
+```
+
+##### `translations.ts`
+**Zweck:** Multi-Language Unterstützung
+
+**Struktur:**
+```typescript
+interface Translations {
+  // Common
+  back: string;
+  save: string;
+  cancel: string;
+  // ... weitere Übersetzungsschlüssel
+  
+  // Verschachtelte Objekte für strukturierte Daten
+  languageNames: {
+    en: string;
+    de: string;
+    es: string;
+  };
+}
+
+// Typ-sichere Sprach-Definition
+type Language = 'en' | 'de' | 'es';
+
+// Alle Übersetzungen in einem Objekt
+const translations: Record<Language, Translations> = {
+  en: { /* Englische Strings */ },
+  de: { /* Deutsche Strings */ },
+  es: { /* Spanische Strings */ }
+};
+```
+
+**Kategorien:**
+- Common (back, save, cancel, edit, delete)
+- Home Page (trackMeal, lastMeal, noMealYet, targetGoal)
+- Settings Page (settings, notifications, targetHours, etc.)
+- Toast Messages (targetHoursSaved, mealTimeUpdated, invalidInput)
+- History Dialog (historyTitle, noHistory, currentMeal)
+- Language Names (en, de, es)
+
+**Verwendung:**
+```typescript
+import { useLanguage } from '@/hooks/use-language';
+
+const { t } = useLanguage();
+<button>{t.trackMeal}</button>  // Type-safe!
 ```
 
 ##### `time-utils.ts`
@@ -141,9 +223,11 @@ function supportsBadgeAPI(): boolean
 - Zeigt Track Meal Button
 - Displayed Echtzeit-Timer
 - Visualisiert Fortschritt
+- **Vollständig lokalisiert** (EN/DE/ES)
 
 **Abhängigkeiten:**
 - `useMealTracker` Hook für State
+- `useLanguage` Hook für Übersetzungen
 - `time-utils` für Formatierung
 - `constants` für Konfiguration
 
@@ -151,19 +235,28 @@ function supportsBadgeAPI(): boolean
 - useEffect für Timer-Updates (1 Sekunde)
 - useEffect für Badge-Updates (auf Stunden-Wechsel)
 - Event Handler für Track Meal
+- Alle UI-Texte via `t.*` Übersetzungsschlüssel
 
 ##### `settings.tsx` - Einstellungsseite
 **Verantwortlichkeit:**
+- **Sprachwahl** (EN/DE/ES) mit 3-Button-Layout
 - Push-Benachrichtigungen aktivieren/deaktivieren
 - Zielstunden konfigurieren (1-24h)
 - Letzte Mahlzeit bearbeiten
 - Mahlzeiten-Historie anzeigen
+- **Vollständig lokalisiert** (EN/DE/ES)
 
 **UI-Patterns:**
 - Card-Layout für logische Gruppierung
+- **Sprach-Karte** mit Button-Grid (EN, DE, ES)
 - Dialog für Historie
-- Toast für Feedback
+- Toast für Feedback (lokalisiert)
 - +/- Buttons für Zahlen-Input
+
+**Sprachauswahl:**
+- Aktive Sprache: `variant="default"`
+- Inaktive Sprachen: `variant="outline"`
+- Sofortige UI-Aktualisierung bei Wechsel
 
 ### Backend Layer
 
@@ -208,11 +301,13 @@ pushSubscriptions (
 - `lastMealTime`: Unix-Timestamp (number)
 - `mealHistory`: Array von MealEntry-Objekten
 - `targetHours`: Zielstunden (1-24)
+- `language`: Sprachauswahl ('en' | 'de' | 'es')
 
 **Validierung:**
 - Bei jedem Load werden Werte geprüft
 - Ungültige Werte werden mit Defaults ersetzt
 - targetHours wird auf 1-24 begrenzt
+- language wird auf unterstützte Sprachen validiert (Default: 'en')
 
 #### PostgreSQL (Neon)
 **Zweck:** Push Subscriptions und Reminder-Tracking
@@ -389,6 +484,96 @@ const lastMeal = localStorage.getItem('lastMealTime');
 - Offline-Fähigkeit
 - Background Sync möglich
 
+## Internationalisierung (i18n)
+
+### Architektur
+
+**Single Source of Truth:**
+- Alle UI-Texte kommen aus `lib/translations.ts`
+- Keine hard-coded Strings in Komponenten
+- Type-safe via TypeScript Interface
+
+**Workflow:**
+```
+User wählt Sprache in Settings
+    ↓
+useLanguage: setLanguage(newLang)
+    ↓
+1. Update State
+2. In localStorage speichern
+3. Trigger Re-Render
+    ↓
+Alle Komponenten nutzen neues t-Objekt
+    ↓
+UI zeigt neue Sprache
+```
+
+### Neue Sprache hinzufügen
+
+**1. Type erweitern:**
+```typescript
+// lib/translations.ts
+export type Language = 'en' | 'de' | 'es' | 'fr';  // Französisch hinzufügen
+```
+
+**2. Übersetzungen hinzufügen:**
+```typescript
+// lib/translations.ts
+export const translations: Record<Language, Translations> = {
+  // ...bestehende Sprachen
+  fr: {
+    back: 'Retour',
+    save: 'Enregistrer',
+    // ... alle Schlüssel übersetzen
+  }
+};
+```
+
+**3. Konstante aktualisieren:**
+```typescript
+// lib/constants.ts
+export const LANGUAGE_CONFIG = {
+  DEFAULT: 'en' as const,
+  SUPPORTED: ['en', 'de', 'es', 'fr'] as const
+};
+```
+
+**4. UI erweitern:**
+```typescript
+// pages/settings.tsx
+{(['en', 'de', 'es', 'fr'] as const).map((lang) => (
+  <Button
+    variant={language === lang ? "default" : "outline"}
+    onClick={() => setLanguage(lang)}
+  >
+    {t.languageNames[lang]}
+  </Button>
+))}
+```
+
+### Best Practices i18n
+
+**✅ Gut:**
+```typescript
+const { t } = useLanguage();
+<h1>{t.settings}</h1>
+<p>{t.notificationsDescription}</p>
+```
+
+**❌ Schlecht:**
+```typescript
+<h1>Settings</h1>  // Hard-coded String!
+<p>Receive reminders...</p>  // Nicht übersetzbar!
+```
+
+### Übersetzungs-Kategorien
+
+Strukturiere neue Strings nach Kategorie:
+- **Common**: Wiederverwendbare Aktionen (save, cancel, edit)
+- **Feature-spezifisch**: Pro Page/Feature gruppieren
+- **Toast Messages**: Feedback-Nachrichten
+- **Dialogs**: Dialog-spezifische Texte
+
 ## Erweiterbarkeit
 
 ### Neue Features hinzufügen
@@ -421,6 +606,14 @@ export function newUtility(input: string): number {
 // 2. State-Variable hinzufügen
 // 3. Update-Funktion implementieren
 // 4. In Hook-Return hinzufügen
+```
+
+**4. Neue Übersetzung:**
+```typescript
+// lib/translations.ts
+// 1. Key zum Translations Interface hinzufügen
+// 2. Für ALLE Sprachen übersetzen (EN, DE, ES)
+// 3. Via useLanguage Hook nutzen
 ```
 
 ## Deployment
