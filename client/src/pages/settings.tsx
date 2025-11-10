@@ -21,7 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, BellOff, Plus, Minus, ArrowLeft, Clock, History, Pencil } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Bell, BellOff, Plus, Minus, ArrowLeft, Clock, History, Pencil, Globe } from "lucide-react";
 import {
   registerPushNotifications,
   unregisterPushNotifications,
@@ -30,9 +31,11 @@ import {
 } from "@/lib/push-notifications";
 import { useToast } from "@/hooks/use-toast";
 import { useMealTracker } from "@/hooks/use-meal-tracker";
+import { useLanguage } from "@/hooks/use-language";
 import { formatDateTime } from "@/lib/time-utils";
 import { TARGET_HOURS_CONFIG } from "@/lib/constants";
 import { supportsBadgeAPI } from "@/types/meal-tracker";
+import { Language } from "@/lib/translations";
 
 /**
  * Settings page component
@@ -52,6 +55,9 @@ export default function Settings() {
     updateLastMealTime,
     updateTargetHours,
   } = useMealTracker();
+  
+  // Language state and translations
+  const { language, t, setLanguage } = useLanguage();
   
   // Local UI state for settings inputs
   const [tempTargetHours, setTempTargetHours] = useState<string>(targetHours.toString());
@@ -105,8 +111,8 @@ export default function Settings() {
       await unregisterPushNotifications();
       setNotificationsEnabled(false);
       toast({
-        title: "Benachrichtigungen deaktiviert",
-        description: "Sie erhalten keine Erinnerungen mehr",
+        title: t.notificationsDisabled,
+        description: t.notificationsDescription,
       });
     } else {
       // Enable notifications
@@ -114,13 +120,13 @@ export default function Settings() {
       if (success) {
         setNotificationsEnabled(true);
         toast({
-          title: "Benachrichtigungen aktiviert",
-          description: `Sie erhalten jetzt Erinnerungen nach ${targetHours}+ Stunden und tägliche Reminders`,
+          title: t.notificationsEnabled,
+          description: t.notificationsDescription,
         });
       } else {
         toast({
-          title: "Fehler",
-          description: "Benachrichtigungen konnten nicht aktiviert werden",
+          title: t.permissionDenied,
+          description: t.permissionDenied,
           variant: "destructive",
         });
       }
@@ -167,8 +173,8 @@ export default function Settings() {
     // Validate input
     if (isNaN(hours) || hours < TARGET_HOURS_CONFIG.MIN || hours > TARGET_HOURS_CONFIG.MAX) {
       toast({
-        title: "Ungültige Eingabe",
-        description: `Bitte geben Sie eine Zahl zwischen ${TARGET_HOURS_CONFIG.MIN} und ${TARGET_HOURS_CONFIG.MAX} ein`,
+        title: t.invalidInput,
+        description: `${TARGET_HOURS_CONFIG.MIN}-${TARGET_HOURS_CONFIG.MAX} ${t.hours}`,
         variant: "destructive",
       });
       return;
@@ -178,8 +184,8 @@ export default function Settings() {
     updateTargetHours(hours);
     
     toast({
-      title: "Einstellungen gespeichert",
-      description: `Zielzeit auf ${hours} Stunden gesetzt`,
+      title: t.targetHoursSaved,
+      description: `${hours} ${t.hours}`,
     });
   };
 
@@ -199,8 +205,8 @@ export default function Settings() {
       setIsEditDialogOpen(true);
     } else {
       toast({
-        title: "Keine Mahlzeit",
-        description: "Bitte tracken Sie zuerst eine Mahlzeit",
+        title: t.noMealYet,
+        description: t.noMealYet,
         variant: "destructive",
       });
     }
@@ -247,8 +253,8 @@ export default function Settings() {
 
       setIsEditDialogOpen(false);
       toast({
-        title: "Mahlzeit aktualisiert",
-        description: "Die letzte Mahlzeit wurde bearbeitet",
+        title: t.mealTimeUpdated,
+        description: t.mealTimeUpdated,
       });
     }
   };
@@ -264,20 +270,48 @@ export default function Settings() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">Einstellungen</h1>
-            <p className="text-sm text-muted-foreground">Passen Sie Ihre Präferenzen an</p>
+            <h1 className="text-3xl font-bold">{t.settings}</h1>
+            <p className="text-sm text-muted-foreground">{t.languageDescription}</p>
           </div>
         </div>
+
+        {/* Language Selection Card */}
+        <Card data-testid="card-language">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              {t.language}
+            </CardTitle>
+            <CardDescription>
+              {t.languageDescription}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              {(['en', 'de', 'es'] as const).map((lang) => (
+                <Button
+                  key={lang}
+                  variant={language === lang ? "default" : "outline"}
+                  onClick={() => setLanguage(lang)}
+                  className="w-full"
+                  data-testid={`button-language-${lang}`}
+                >
+                  {t.languageNames[lang]}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Notifications Card */}
         <Card data-testid="card-notifications">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
-              Benachrichtigungen
+              {t.notifications}
             </CardTitle>
             <CardDescription>
-              Push-Benachrichtigungen für Erinnerungen
+              {t.notificationsDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -290,18 +324,18 @@ export default function Settings() {
               {notificationsEnabled ? (
                 <>
                   <Bell className="mr-2 h-4 w-4" />
-                  Benachrichtigungen aktiv
+                  {t.enableNotifications}
                 </>
               ) : (
                 <>
                   <BellOff className="mr-2 h-4 w-4" />
-                  Benachrichtigungen aktivieren
+                  {t.enableNotifications}
                 </>
               )}
             </Button>
             {notificationsEnabled && (
               <p className="text-xs text-muted-foreground mt-3 text-center">
-                Sie erhalten Erinnerungen nach {targetHours}+ Stunden und tägliche Reminders um 9:00 Uhr
+                {t.notificationsDescription}
               </p>
             )}
           </CardContent>
@@ -312,10 +346,10 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Zielzeit festlegen
+              {t.targetHours}
             </CardTitle>
             <CardDescription>
-              Nach wie vielen Stunden möchten Sie erinnert werden?
+              {t.targetHoursDescription}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -338,7 +372,7 @@ export default function Settings() {
                   {String(parseInt(tempTargetHours, 10) || TARGET_HOURS_CONFIG.DEFAULT).padStart(2, '0')}
                 </div>
                 <div className="text-sm text-muted-foreground font-medium">
-                  Stunden
+                  {t.hours}
                 </div>
               </div>
               
@@ -355,7 +389,7 @@ export default function Settings() {
             </div>
             
             <p className="text-xs text-center text-muted-foreground">
-              Wählen Sie zwischen {TARGET_HOURS_CONFIG.MIN} und {TARGET_HOURS_CONFIG.MAX} Stunden
+              {TARGET_HOURS_CONFIG.MIN}-{TARGET_HOURS_CONFIG.MAX} {t.hours}
             </p>
             
             <Button
@@ -363,7 +397,7 @@ export default function Settings() {
               className="w-full"
               data-testid="button-save-target-hours"
             >
-              Speichern
+              {t.save}
             </Button>
           </CardContent>
         </Card>
@@ -374,16 +408,16 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Pencil className="h-5 w-5" />
-                Letzte Mahlzeit bearbeiten
+                {t.editLastMeal}
               </CardTitle>
               <CardDescription>
-                Aktualisieren Sie die Zeit Ihrer letzten Mahlzeit
+                {t.editLastMealDescription}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="text-sm">
-                  <span className="text-muted-foreground">Letzte Mahlzeit: </span>
+                  <span className="text-muted-foreground">{t.lastMeal}: </span>
                   <span className="font-medium">{formatDateTime(lastMealTime)}</span>
                 </div>
                 <Button
@@ -393,7 +427,7 @@ export default function Settings() {
                   data-testid="button-edit-meal"
                 >
                   <Pencil className="mr-2 h-4 w-4" />
-                  Zeit ändern
+                  {t.edit}
                 </Button>
               </div>
             </CardContent>
@@ -405,10 +439,10 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
-              Mahlzeiten-Historie
+              {t.mealHistory}
             </CardTitle>
             <CardDescription>
-              Alle aufgezeichneten Mahlzeiten anzeigen
+              {t.mealHistoryDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -419,7 +453,7 @@ export default function Settings() {
               data-testid="button-show-history"
             >
               <History className="mr-2 h-4 w-4" />
-              Historie anzeigen ({mealHistory.length})
+              {t.viewHistory} ({mealHistory.length})
             </Button>
           </CardContent>
         </Card>
@@ -428,11 +462,11 @@ export default function Settings() {
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent data-testid="dialog-edit-meal">
             <DialogHeader>
-              <DialogTitle>Letzte Mahlzeit bearbeiten</DialogTitle>
+              <DialogTitle>{t.editLastMeal}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-date">Datum</Label>
+                <Label htmlFor="edit-date">{t.edit}</Label>
                 <Input
                   id="edit-date"
                   type="date"
@@ -442,7 +476,7 @@ export default function Settings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-time">Uhrzeit</Label>
+                <Label htmlFor="edit-time">{t.edit}</Label>
                 <Input
                   id="edit-time"
                   type="time"
@@ -457,13 +491,13 @@ export default function Settings() {
                   onClick={() => setIsEditDialogOpen(false)}
                   data-testid="button-cancel-edit"
                 >
-                  Abbrechen
+                  {t.cancel}
                 </Button>
                 <Button
                   onClick={handleSaveEdit}
                   data-testid="button-save-edit"
                 >
-                  Speichern
+                  {t.save}
                 </Button>
               </div>
             </div>
@@ -474,12 +508,12 @@ export default function Settings() {
         <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
           <DialogContent data-testid="dialog-history" className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Mahlzeiten-Historie</DialogTitle>
+              <DialogTitle>{t.historyTitle}</DialogTitle>
             </DialogHeader>
             <ScrollArea className="h-[400px] pr-4">
               {mealHistory.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Noch keine Mahlzeiten aufgezeichnet
+                  {t.noHistory}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -492,16 +526,16 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-semibold text-foreground">
-                            Mahlzeit {mealHistory.length - index}
+                            {t.lastMeal} {mealHistory.length - index}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {formatDateTime(meal.timestamp)}
                           </p>
                         </div>
                         {index === 0 && (
-                          <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-md">
-                            Aktuell
-                          </span>
+                          <Badge variant="default" data-testid="badge-current">
+                            {t.currentMeal}
+                          </Badge>
                         )}
                       </div>
                     </div>
