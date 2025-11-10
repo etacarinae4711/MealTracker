@@ -23,6 +23,12 @@ export const STORAGE_KEYS = {
   
   /** User's preferred language (en, de, es) */
   LANGUAGE: "language",
+  
+  /** Start hour for quiet hours (no notifications) */
+  QUIET_HOURS_START: "quietHoursStart",
+  
+  /** End hour for quiet hours (no notifications) */
+  QUIET_HOURS_END: "quietHoursEnd",
 } as const;
 
 /**
@@ -93,4 +99,23 @@ export const LANGUAGE_CONFIG = {
   
   /** List of supported language codes */
   SUPPORTED: ['en', 'de', 'es'] as const,
+} as const;
+
+/**
+ * Quiet hours configuration
+ * 
+ * Defines default quiet hours during which no push notifications are sent
+ */
+export const QUIET_HOURS_CONFIG = {
+  /** Default start hour (22:00 / 10 PM) */
+  DEFAULT_START: 22,
+  
+  /** Default end hour (08:00 / 8 AM) */
+  DEFAULT_END: 8,
+  
+  /** Minimum hour value (0 = midnight) */
+  MIN_HOUR: 0,
+  
+  /** Maximum hour value (23 = 11 PM) */
+  MAX_HOUR: 23,
 } as const;

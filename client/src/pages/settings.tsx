@@ -33,7 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMealTracker } from "@/hooks/use-meal-tracker";
 import { useLanguage } from "@/hooks/use-language";
 import { formatDateTime } from "@/lib/time-utils";
-import { TARGET_HOURS_CONFIG } from "@/lib/constants";
+import { TARGET_HOURS_CONFIG, QUIET_HOURS_CONFIG, STORAGE_KEYS } from "@/lib/constants";
 import { supportsBadgeAPI } from "@/types/meal-tracker";
 import { Language } from "@/lib/translations";
 
@@ -63,6 +63,10 @@ export default function Settings() {
   const [tempTargetHours, setTempTargetHours] = useState<string>(targetHours.toString());
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
+  // Quiet hours state
+  const [quietHoursStart, setQuietHoursStart] = useState<number>(QUIET_HOURS_CONFIG.DEFAULT_START);
+  const [quietHoursEnd, setQuietHoursEnd] = useState<number>(QUIET_HOURS_CONFIG.DEFAULT_END);
+  
   // Dialog state
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -74,13 +78,31 @@ export default function Settings() {
   const { toast } = useToast();
 
   /**
-   * Effect: Initialize notification state
+   * Effect: Initialize notification state and quiet hours
    * 
    * Checks if push notifications are currently enabled
-   * and updates the UI state accordingly.
+   * and loads saved quiet hours from localStorage.
    */
   useEffect(() => {
     isPushNotificationEnabled().then(setNotificationsEnabled);
+    
+    // Load quiet hours from localStorage
+    const savedStart = localStorage.getItem(STORAGE_KEYS.QUIET_HOURS_START);
+    const savedEnd = localStorage.getItem(STORAGE_KEYS.QUIET_HOURS_END);
+    
+    if (savedStart !== null) {
+      const start = parseInt(savedStart, 10);
+      if (!isNaN(start) && start >= QUIET_HOURS_CONFIG.MIN_HOUR && start <= QUIET_HOURS_CONFIG.MAX_HOUR) {
+        setQuietHoursStart(start);
+      }
+    }
+    
+    if (savedEnd !== null) {
+      const end = parseInt(savedEnd, 10);
+      if (!isNaN(end) && end >= QUIET_HOURS_CONFIG.MIN_HOUR && end <= QUIET_HOURS_CONFIG.MAX_HOUR) {
+        setQuietHoursEnd(end);
+      }
+    }
   }, []);
 
   /**
@@ -186,6 +208,74 @@ export default function Settings() {
     toast({
       title: t.targetHoursSaved,
       description: `${hours} ${t.hours}`,
+    });
+  };
+
+  /**
+   * Saves the quiet hours settings
+   * 
+   * Validates the input hours and persists them to localStorage.
+   * Also updates the server if push notifications are enabled.
+   * 
+   * Side effects:
+   * - Updates localStorage
+   * - May trigger server API call to update push subscription
+   * - Shows toast notification
+   */
+  const handleSaveQuietHours = async () => {
+    // Validate hours
+    if (quietHoursStart < QUIET_HOURS_CONFIG.MIN_HOUR || quietHoursStart > QUIET_HOURS_CONFIG.MAX_HOUR) {
+      toast({
+        title: t.invalidInput,
+        description: `${QUIET_HOURS_CONFIG.MIN_HOUR}-${QUIET_HOURS_CONFIG.MAX_HOUR}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (quietHoursEnd < QUIET_HOURS_CONFIG.MIN_HOUR || quietHoursEnd > QUIET_HOURS_CONFIG.MAX_HOUR) {
+      toast({
+        title: t.invalidInput,
+        description: `${QUIET_HOURS_CONFIG.MIN_HOUR}-${QUIET_HOURS_CONFIG.MAX_HOUR}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Save to localStorage
+    localStorage.setItem(STORAGE_KEYS.QUIET_HOURS_START, quietHoursStart.toString());
+    localStorage.setItem(STORAGE_KEYS.QUIET_HOURS_END, quietHoursEnd.toString());
+    
+    // Update server if notifications are enabled
+    if (notificationsEnabled) {
+      try {
+        // Get current push subscription to extract endpoint
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        
+        if (subscription) {
+          const response = await fetch('/api/push/update-quiet-hours', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              endpoint: subscription.endpoint,
+              quietHoursStart,
+              quietHoursEnd,
+            }),
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to update quiet hours on server');
+          }
+        }
+      } catch (error) {
+        console.error('Error updating quiet hours:', error);
+      }
+    }
+    
+    toast({
+      title: t.quietHoursSaved,
+      description: `${String(quietHoursStart).padStart(2, '0')}:00 - ${String(quietHoursEnd).padStart(2, '0')}:00`,
     });
   };
 
@@ -300,6 +390,68 @@ export default function Settings() {
                 </Button>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Quiet Hours Card */}
+        <Card data-testid="card-quiet-hours">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              {t.quietHours}
+            </CardTitle>
+            <CardDescription>
+              {t.quietHoursDescription}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="quiet-start">{t.quietHoursStart}</Label>
+                <select
+                  id="quiet-start"
+                  value={quietHoursStart}
+                  onChange={(e) => setQuietHoursStart(parseInt(e.target.value, 10))}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  data-testid="select-quiet-start"
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {String(i).padStart(2, '0')}:00
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="quiet-end">{t.quietHoursEnd}</Label>
+                <select
+                  id="quiet-end"
+                  value={quietHoursEnd}
+                  onChange={(e) => setQuietHoursEnd(parseInt(e.target.value, 10))}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  data-testid="select-quiet-end"
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {String(i).padStart(2, '0')}:00
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <p className="text-xs text-center text-muted-foreground">
+              {String(quietHoursStart).padStart(2, '0')}:00 - {String(quietHoursEnd).padStart(2, '0')}:00
+            </p>
+            
+            <Button
+              onClick={handleSaveQuietHours}
+              className="w-full"
+              data-testid="button-save-quiet-hours"
+            >
+              {t.save}
+            </Button>
           </CardContent>
         </Card>
 
