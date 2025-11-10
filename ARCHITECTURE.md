@@ -119,7 +119,9 @@ STORAGE_KEYS = {
   LAST_MEAL_TIME: 'lastMealTime',
   MEAL_HISTORY: 'mealHistory',
   TARGET_HOURS: 'targetHours',
-  LANGUAGE: 'language'           // Neue: Spracheinstellung
+  LANGUAGE: 'language',              // Spracheinstellung
+  QUIET_HOURS_START: 'quietHoursStart',  // Ruhezeiten-Beginn
+  QUIET_HOURS_END: 'quietHoursEnd'       // Ruhezeiten-Ende
 }
 
 // Zeit-Konstanten
@@ -140,6 +142,14 @@ BADGE_CONFIG = {
 LANGUAGE_CONFIG = {
   DEFAULT: 'en',
   SUPPORTED: ['en', 'de', 'es']
+}
+
+// Ruhezeiten-Konfiguration
+QUIET_HOURS_CONFIG = {
+  DEFAULT_START: 22,    // 22:00 Uhr
+  DEFAULT_END: 8,       // 08:00 Uhr
+  MIN_HOUR: 0,
+  MAX_HOUR: 23
 }
 ```
 
@@ -241,7 +251,8 @@ function supportsBadgeAPI(): boolean
 **Verantwortlichkeit:**
 - **Sprachwahl** (EN/DE/ES) mit 3-Button-Layout
 - Push-Benachrichtigungen aktivieren/deaktivieren
-- Zielstunden konfigurieren (1-24h)
+- **Mindestabstand zwischen Mahlzeiten** konfigurieren (1-24h)
+- **Ruhezeiten** konfigurieren (Start-/Endzeit für benachrichtigungsfreie Zeiten)
 - Letzte Mahlzeit bearbeiten
 - Mahlzeiten-Historie anzeigen
 - **Vollständig lokalisiert** (EN/DE/ES)
@@ -249,6 +260,7 @@ function supportsBadgeAPI(): boolean
 **UI-Patterns:**
 - Card-Layout für logische Gruppierung
 - **Sprach-Karte** mit Button-Grid (EN, DE, ES)
+- **Ruhezeiten-Karte** mit Select-Dropdowns für Start-/Endzeit
 - Dialog für Historie
 - Toast für Feedback (lokalisiert)
 - +/- Buttons für Zahlen-Input
@@ -257,6 +269,12 @@ function supportsBadgeAPI(): boolean
 - Aktive Sprache: `variant="default"`
 - Inaktive Sprachen: `variant="outline"`
 - Sofortige UI-Aktualisierung bei Wechsel
+
+**Ruhezeiten:**
+- Zeitauswahl von 00:00 bis 23:00 Uhr
+- Unterstützt Zeitspannen über Mitternacht (z.B. 22:00-08:00)
+- Wird in localStorage und DB persistiert
+- Backend-Scheduler respektiert diese Einstellungen
 
 ### Backend Layer
 
@@ -267,30 +285,44 @@ function supportsBadgeAPI(): boolean
 - API-Endpunkte für Push-Notifications
 - Session Management (Connect-PG-Simple)
 
-#### 2. Push Scheduler (`server/push-scheduler.ts`)
+#### 2. Push Scheduler (`server/notification-scheduler.ts`)
 
 **Cron Jobs:**
-1. **Stündlicher Badge-Update** (jede Stunde)
+1. **Stündlicher Badge-Update** (jede Stunde, "0 * * * *")
    - Sendet Silent Push an alle Subscriptions
    - Aktualisiert Badge mit aktueller Stundenzahl
 
-2. **Zielzeit-Reminder** (alle 5 Minuten)
-   - Prüft ob Zielzeit erreicht
-   - Sendet Notification nur einmal pro Mahlzeit
-   - Tracking via `lastReminderSent` in DB
+2. **Mindestabstands-Reminder** (stündlich, "0 * * * *")
+   - Prüft ob Mindestabstand erreicht
+   - **Respektiert Ruhezeiten** (quietHoursStart/End aus DB)
+   - Sendet Notification nur außerhalb der Ruhezeiten
+   - Unterstützt Zeitspannen über Mitternacht
 
-3. **Täglicher Reminder** (9:00 Uhr)
-   - Erinnerung falls keine Mahlzeit geloggt
+**Ruhezeiten-Logik:**
+```typescript
+function isInQuietHours(quietStart: number, quietEnd: number): boolean {
+  const currentHour = new Date().getHours();
+  
+  // Über Mitternacht: z.B. 22:00-08:00
+  if (quietStart > quietEnd) {
+    return currentHour >= quietStart || currentHour < quietEnd;
+  }
+  
+  // Normale Zeitspanne: z.B. 10:00-18:00
+  return currentHour >= quietStart && currentHour < quietEnd;
+}
+```
 
 **Datenbank-Schema:**
 ```sql
 pushSubscriptions (
   id: varchar PRIMARY KEY,
   endpoint: text,
-  p256dh: text,
-  auth: text,
+  keys: text,                    -- JSON: { p256dh, auth }
   lastMealTime: bigint,
-  lastReminderSent: bigint
+  lastDailyReminder: bigint,
+  quietHoursStart: integer,      -- 0-23, Default: 22
+  quietHoursEnd: integer         -- 0-23, Default: 8
 )
 ```
 
@@ -300,22 +332,27 @@ pushSubscriptions (
 **Gespeicherte Daten:**
 - `lastMealTime`: Unix-Timestamp (number)
 - `mealHistory`: Array von MealEntry-Objekten
-- `targetHours`: Zielstunden (1-24)
+- `targetHours`: Mindestabstand zwischen Mahlzeiten (1-24 Stunden)
 - `language`: Sprachauswahl ('en' | 'de' | 'es')
+- `quietHoursStart`: Ruhezeiten-Beginn (0-23, Default: 22)
+- `quietHoursEnd`: Ruhezeiten-Ende (0-23, Default: 8)
 
 **Validierung:**
 - Bei jedem Load werden Werte geprüft
 - Ungültige Werte werden mit Defaults ersetzt
 - targetHours wird auf 1-24 begrenzt
 - language wird auf unterstützte Sprachen validiert (Default: 'en')
+- quietHours werden auf 0-23 validiert (Defaults: 22/8)
 
 #### PostgreSQL (Neon)
-**Zweck:** Push Subscriptions und Reminder-Tracking
+**Zweck:** Push Subscriptions, Reminder-Tracking und Ruhezeiten
 
 **Vorteile:**
 - Persistente Subscriptions über Browser-Sessions
 - Server kann proaktiv Notifications senden
 - Tracking von Reminder-Status
+- Persönliche Ruhezeiten-Einstellungen pro Subscription
+- Server respektiert Ruhezeiten bei Push-Benachrichtigungen
 
 ## Datenfluss
 
@@ -357,7 +394,7 @@ Update UI (Timer + Progress Bar)
 ### Settings Update Flow
 
 ```
-User ändert Zielstunden (+/- Button)
+User ändert Mindestabstand (+/- Button)
     ↓
 settings.tsx: setState(newValue)
     ↓
@@ -372,6 +409,33 @@ useMealTracker: updateTargetHours(value)
 Toast-Benachrichtigung
     ↓
 Home-Page zeigt neues Ziel
+```
+
+### Ruhezeiten Update Flow
+
+```
+User ändert Ruhezeiten in Settings
+    ↓
+settings.tsx: setQuietHoursStart/End(value)
+    ↓
+User klickt "Speichern"
+    ↓
+1. In localStorage speichern
+2. Service Worker Subscription holen
+3. Endpoint extrahieren
+    ↓
+POST /api/push/update-quiet-hours
+    {
+      endpoint: "...",
+      quietHoursStart: 22,
+      quietHoursEnd: 8
+    }
+    ↓
+Backend: Subscription finden und updaten
+    ↓
+Toast-Benachrichtigung
+    ↓
+Scheduler respektiert neue Ruhezeiten
 ```
 
 ## Push Notification System
