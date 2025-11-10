@@ -64,6 +64,10 @@ export async function registerPushNotifications(lastMealTime?: number): Promise<
       applicationServerKey: urlBase64ToUint8Array(publicKey),
     });
 
+    // Load quiet hours from localStorage
+    const quietHoursStart = localStorage.getItem('quietHoursStart');
+    const quietHoursEnd = localStorage.getItem('quietHoursEnd');
+
     // Send subscription details to server for storage
     await fetch("/api/push/subscribe", {
       method: "POST",
@@ -75,6 +79,8 @@ export async function registerPushNotifications(lastMealTime?: number): Promise<
           auth: arrayBufferToBase64(subscription.getKey("auth")),
         },
         lastMealTime: lastMealTime || null,
+        quietHoursStart: quietHoursStart ? parseInt(quietHoursStart, 10) : 22,
+        quietHoursEnd: quietHoursEnd ? parseInt(quietHoursEnd, 10) : 8,
       }),
     });
 

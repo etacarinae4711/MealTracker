@@ -37,6 +37,11 @@ export interface Translations {
   currentMeal: string;
   language: string;
   languageDescription: string;
+  quietHours: string;
+  quietHoursDescription: string;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  quietHoursSaved: string;
   
   // Notifications
   permissionDenied: string;
@@ -92,6 +97,11 @@ export const translations: Record<Language, Translations> = {
     currentMeal: 'Current',
     language: 'Language',
     languageDescription: 'Choose your preferred language',
+    quietHours: 'Quiet Hours',
+    quietHoursDescription: 'Set hours when no notifications should be sent',
+    quietHoursStart: 'Start',
+    quietHoursEnd: 'End',
+    quietHoursSaved: 'Quiet hours saved',
     
     // Notifications
     permissionDenied: 'Notification permission denied',
@@ -146,6 +156,11 @@ export const translations: Record<Language, Translations> = {
     currentMeal: 'Aktuell',
     language: 'Sprache',
     languageDescription: 'Wähle deine bevorzugte Sprache',
+    quietHours: 'Ruhezeiten',
+    quietHoursDescription: 'Lege fest, wann keine Benachrichtigungen gesendet werden sollen',
+    quietHoursStart: 'Beginn',
+    quietHoursEnd: 'Ende',
+    quietHoursSaved: 'Ruhezeiten gespeichert',
     
     // Notifications
     permissionDenied: 'Benachrichtigungsberechtigung verweigert',
@@ -200,6 +215,11 @@ export const translations: Record<Language, Translations> = {
     currentMeal: 'Actual',
     language: 'Idioma',
     languageDescription: 'Elige tu idioma preferido',
+    quietHours: 'Horas silenciosas',
+    quietHoursDescription: 'Establece las horas en las que no se deben enviar notificaciones',
+    quietHoursStart: 'Inicio',
+    quietHoursEnd: 'Fin',
+    quietHoursSaved: 'Horas silenciosas guardadas',
     
     // Notifications
     permissionDenied: 'Permiso de notificación denegado',
