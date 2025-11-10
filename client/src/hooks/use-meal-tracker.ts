@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from "react";
 import { MealEntry, MealTrackerState } from "@/types/meal-tracker";
-import { STORAGE_KEYS, TARGET_HOURS_CONFIG } from "@/lib/constants";
+import { STORAGE_KEYS, TARGET_HOURS_CONFIG, QUIET_HOURS_CONFIG } from "@/lib/constants";
 
 /**
  * Hook return type with state and actions
@@ -23,6 +23,15 @@ interface UseMealTrackerReturn extends MealTrackerState {
   
   /** Updates the user's target hours setting */
   updateTargetHours: (hours: number) => void;
+  
+  /** Quiet hours start (0-23) */
+  quietHoursStart: number;
+  
+  /** Quiet hours end (0-23) */
+  quietHoursEnd: number;
+  
+  /** Updates quiet hours settings */
+  updateQuietHours: (start: number, end: number) => void;
 }
 
 /**
@@ -76,6 +85,48 @@ function loadMealHistory(): MealEntry[] {
 }
 
 /**
+ * Loads quiet hours start from localStorage
+ * 
+ * @returns Valid hour (0-23)
+ */
+function loadQuietHoursStart(): number {
+  const stored = localStorage.getItem(STORAGE_KEYS.QUIET_HOURS_START);
+  
+  if (!stored) {
+    return QUIET_HOURS_CONFIG.DEFAULT_START;
+  }
+  
+  const hour = parseInt(stored, 10);
+  
+  if (isNaN(hour) || hour < QUIET_HOURS_CONFIG.MIN_HOUR || hour > QUIET_HOURS_CONFIG.MAX_HOUR) {
+    return QUIET_HOURS_CONFIG.DEFAULT_START;
+  }
+  
+  return hour;
+}
+
+/**
+ * Loads quiet hours end from localStorage
+ * 
+ * @returns Valid hour (0-23)
+ */
+function loadQuietHoursEnd(): number {
+  const stored = localStorage.getItem(STORAGE_KEYS.QUIET_HOURS_END);
+  
+  if (!stored) {
+    return QUIET_HOURS_CONFIG.DEFAULT_END;
+  }
+  
+  const hour = parseInt(stored, 10);
+  
+  if (isNaN(hour) || hour < QUIET_HOURS_CONFIG.MIN_HOUR || hour > QUIET_HOURS_CONFIG.MAX_HOUR) {
+    return QUIET_HOURS_CONFIG.DEFAULT_END;
+  }
+  
+  return hour;
+}
+
+/**
  * Custom hook for meal tracking state management
  * 
  * Provides a centralized interface for:
@@ -104,6 +155,8 @@ export function useMealTracker(): UseMealTrackerReturn {
   
   const [mealHistory, setMealHistory] = useState<MealEntry[]>(loadMealHistory);
   const [targetHours, setTargetHours] = useState<number>(loadTargetHours);
+  const [quietHoursStart, setQuietHoursStart] = useState<number>(loadQuietHoursStart);
+  const [quietHoursEnd, setQuietHoursEnd] = useState<number>(loadQuietHoursEnd);
   
   /**
    * Tracks a new meal at the current timestamp
@@ -175,12 +228,40 @@ export function useMealTracker(): UseMealTrackerReturn {
     localStorage.setItem(STORAGE_KEYS.TARGET_HOURS, validHours.toString());
   };
   
+  /**
+   * Updates quiet hours settings
+   * 
+   * Validates inputs and persists to localStorage.
+   * 
+   * @param start - Start hour (0-23)
+   * @param end - End hour (0-23)
+   */
+  const updateQuietHours = (start: number, end: number): void => {
+    // Clamp to valid range
+    const validStart = Math.max(
+      QUIET_HOURS_CONFIG.MIN_HOUR,
+      Math.min(QUIET_HOURS_CONFIG.MAX_HOUR, start)
+    );
+    const validEnd = Math.max(
+      QUIET_HOURS_CONFIG.MIN_HOUR,
+      Math.min(QUIET_HOURS_CONFIG.MAX_HOUR, end)
+    );
+    
+    setQuietHoursStart(validStart);
+    setQuietHoursEnd(validEnd);
+    localStorage.setItem(STORAGE_KEYS.QUIET_HOURS_START, validStart.toString());
+    localStorage.setItem(STORAGE_KEYS.QUIET_HOURS_END, validEnd.toString());
+  };
+  
   return {
     lastMealTime,
     mealHistory,
     targetHours,
+    quietHoursStart,
+    quietHoursEnd,
     trackMeal,
     updateLastMealTime,
     updateTargetHours,
+    updateQuietHours,
   };
 }

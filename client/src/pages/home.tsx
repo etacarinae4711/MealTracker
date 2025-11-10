@@ -24,6 +24,7 @@ import {
   resetBadge,
 } from "@/lib/push-notifications";
 import { useMealTracker } from "@/hooks/use-meal-tracker";
+import { useLanguage } from "@/hooks/use-language";
 import {
   formatElapsedTime,
   calculateElapsedTime,
@@ -44,6 +45,9 @@ import { supportsBadgeAPI } from "@/types/meal-tracker";
 export default function Home() {
   // Meal tracking state managed by custom hook
   const { lastMealTime, trackMeal, targetHours } = useMealTracker();
+  
+  // Language support
+  const { t } = useLanguage();
   
   // Local UI state for elapsed time (updated every second)
   const [elapsedTime, setElapsedTime] = useState<number>(0);

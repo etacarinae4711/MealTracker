@@ -20,6 +20,12 @@ export const STORAGE_KEYS = {
   
   /** User's target hours (1-24) for meal interval goals */
   TARGET_HOURS: "targetHours",
+  
+  /** Quiet hours start (0-23, hour of day when quiet hours begin) */
+  QUIET_HOURS_START: "quietHoursStart",
+  
+  /** Quiet hours end (0-23, hour of day when quiet hours end) */
+  QUIET_HOURS_END: "quietHoursEnd",
 } as const;
 
 /**
@@ -77,4 +83,23 @@ export const BADGE_CONFIG = {
 export const TIMER_CONFIG = {
   /** Update interval in milliseconds (updates every second) */
   UPDATE_INTERVAL_MS: TIME.SECOND_MS,
+} as const;
+
+/**
+ * Quiet hours configuration
+ * 
+ * Defines default quiet hours settings to prevent notifications during sleep/rest time
+ */
+export const QUIET_HOURS_CONFIG = {
+  /** Default start hour (22:00 / 10 PM) */
+  DEFAULT_START: 22,
+  
+  /** Default end hour (8:00 / 8 AM) */
+  DEFAULT_END: 8,
+  
+  /** Minimum hour value */
+  MIN_HOUR: 0,
+  
+  /** Maximum hour value */
+  MAX_HOUR: 23,
 } as const;

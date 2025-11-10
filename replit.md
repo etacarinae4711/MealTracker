@@ -6,6 +6,26 @@ Mealtracker is a minimal, mobile-first Progressive Web App (PWA) designed to tra
 
 ## Recent Changes (2025-11-10)
 
+### Multi-Language Support & Quiet Hours Implementation
+- **Multi-Language System**: Complete EN/DE/ES translations via translations.ts
+  - Language context provider wraps entire app (App.tsx with LanguageProvider)
+  - useLanguage hook provides translation keys and language switching
+  - Language selector card in Settings page
+  - All critical user-facing strings now use t.* translation keys
+  
+- **Quiet Hours Feature**: Configurable notification quiet periods
+  - Database schema extended with quietHoursStart/End columns (pushSubscriptions table)
+  - Constants.ts with QUIET_HOURS_CONFIG (default 22:00-08:00)
+  - use-meal-tracker hook manages quiet hours state and localStorage persistence
+  - Settings page includes Quiet Hours card with start/end time inputs
+  - Quiet hours stored in localStorage and ready for backend sync
+  
+- **Translation Coverage**: All toasts and validation messages now translated
+  - handleToggleNotifications: Uses t.notificationsEnabled/Disabled/Error
+  - handleSaveTargetHours: Uses t.minimumMealIntervalValidation
+  - handleSaveQuietHours: Uses t.quietHoursValidation
+  - No hard-coded strings in critical handlers
+
 ### Feature Complete Refactoring
 - **Code Organization**: Extracted shared logic into reusable modules
   - `client/src/lib/constants.ts` - Centralized configuration values

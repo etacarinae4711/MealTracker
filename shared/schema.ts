@@ -23,6 +23,8 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   keys: text("keys").notNull(),
   lastMealTime: bigint("last_meal_time", { mode: "number" }),
   lastDailyReminder: timestamp("last_daily_reminder"),
+  quietHoursStart: integer("quiet_hours_start"),
+  quietHoursEnd: integer("quiet_hours_end"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

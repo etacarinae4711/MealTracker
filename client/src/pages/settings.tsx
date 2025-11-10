@@ -21,7 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, BellOff, Plus, Minus, ArrowLeft, Clock, History, Pencil } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Bell, BellOff, Plus, Minus, ArrowLeft, Clock, History, Pencil, Languages } from "lucide-react";
 import {
   registerPushNotifications,
   unregisterPushNotifications,
@@ -30,9 +31,11 @@ import {
 } from "@/lib/push-notifications";
 import { useToast } from "@/hooks/use-toast";
 import { useMealTracker } from "@/hooks/use-meal-tracker";
+import { useLanguage } from "@/hooks/use-language";
 import { formatDateTime } from "@/lib/time-utils";
 import { TARGET_HOURS_CONFIG } from "@/lib/constants";
 import { supportsBadgeAPI } from "@/types/meal-tracker";
+import type { Language } from "@/lib/translations";
 
 /**
  * Settings page component
@@ -49,12 +52,20 @@ export default function Settings() {
     lastMealTime,
     mealHistory,
     targetHours,
+    quietHoursStart,
+    quietHoursEnd,
     updateLastMealTime,
     updateTargetHours,
+    updateQuietHours,
   } = useMealTracker();
+  
+  // Language support
+  const { language, setLanguage, t } = useLanguage();
   
   // Local UI state for settings inputs
   const [tempTargetHours, setTempTargetHours] = useState<string>(targetHours.toString());
+  const [tempQuietStart, setTempQuietStart] = useState<string>(quietHoursStart.toString());
+  const [tempQuietEnd, setTempQuietEnd] = useState<string>(quietHoursEnd.toString());
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
   // Dialog state
@@ -105,8 +116,8 @@ export default function Settings() {
       await unregisterPushNotifications();
       setNotificationsEnabled(false);
       toast({
-        title: "Benachrichtigungen deaktiviert",
-        description: "Sie erhalten keine Erinnerungen mehr",
+        title: t.notificationsDisabled,
+        description: t.notificationsDisabledDescription,
       });
     } else {
       // Enable notifications
@@ -114,13 +125,13 @@ export default function Settings() {
       if (success) {
         setNotificationsEnabled(true);
         toast({
-          title: "Benachrichtigungen aktiviert",
-          description: `Sie erhalten jetzt Erinnerungen nach ${targetHours}+ Stunden und tägliche Reminders`,
+          title: t.notificationsEnabled,
+          description: t.notificationsEnabledDescription.replace('{hours}', targetHours.toString()),
         });
       } else {
         toast({
-          title: "Fehler",
-          description: "Benachrichtigungen konnten nicht aktiviert werden",
+          title: t.error,
+          description: t.notificationsError,
           variant: "destructive",
         });
       }
@@ -167,8 +178,10 @@ export default function Settings() {
     // Validate input
     if (isNaN(hours) || hours < TARGET_HOURS_CONFIG.MIN || hours > TARGET_HOURS_CONFIG.MAX) {
       toast({
-        title: "Ungültige Eingabe",
-        description: `Bitte geben Sie eine Zahl zwischen ${TARGET_HOURS_CONFIG.MIN} und ${TARGET_HOURS_CONFIG.MAX} ein`,
+        title: t.error,
+        description: t.minimumMealIntervalValidation
+          .replace('{min}', TARGET_HOURS_CONFIG.MIN.toString())
+          .replace('{max}', TARGET_HOURS_CONFIG.MAX.toString()),
         variant: "destructive",
       });
       return;
@@ -178,8 +191,29 @@ export default function Settings() {
     updateTargetHours(hours);
     
     toast({
-      title: "Einstellungen gespeichert",
-      description: `Zielzeit auf ${hours} Stunden gesetzt`,
+      title: t.saved,
+      description: `${t.minimumMealInterval}: ${hours} ${t.hours}`,
+    });
+  };
+
+  const handleSaveQuietHours = () => {
+    const start = parseInt(tempQuietStart, 10);
+    const end = parseInt(tempQuietEnd, 10);
+    
+    if (isNaN(start) || isNaN(end) || start < 0 || start > 23 || end < 0 || end > 23) {
+      toast({
+        title: t.error,
+        description: t.quietHoursValidation,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateQuietHours(start, end);
+    
+    toast({
+      title: t.saved,
+      description: `${t.quietHours}: ${start}:00 - ${end}:00`,
     });
   };
 
@@ -364,6 +398,79 @@ export default function Settings() {
               data-testid="button-save-target-hours"
             >
               Speichern
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Language Selector Card */}
+        <Card data-testid="card-language">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Languages className="h-5 w-5" />
+              {t.language}
+            </CardTitle>
+            <CardDescription>
+              Choose your preferred language
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Select value={language} onValueChange={(val) => setLanguage(val as Language)}>
+              <SelectTrigger data-testid="select-language">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="de">Deutsch</SelectItem>
+                <SelectItem value="es">Español</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        {/* Quiet Hours Card */}
+        <Card data-testid="card-quiet-hours">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              {t.quietHours}
+            </CardTitle>
+            <CardDescription>
+              {t.quietHoursDescription}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="quiet-start">{t.quietHoursStart}</Label>
+                <Input
+                  id="quiet-start"
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={tempQuietStart}
+                  onChange={(e) => setTempQuietStart(e.target.value)}
+                  data-testid="input-quiet-start"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quiet-end">{t.quietHoursEnd}</Label>
+                <Input
+                  id="quiet-end"
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={tempQuietEnd}
+                  onChange={(e) => setTempQuietEnd(e.target.value)}
+                  data-testid="input-quiet-end"
+                />
+              </div>
+            </div>
+            <Button
+              onClick={handleSaveQuietHours}
+              className="w-full"
+              data-testid="button-save-quiet-hours"
+            >
+              {t.save}
             </Button>
           </CardContent>
         </Card>
