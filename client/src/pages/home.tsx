@@ -201,7 +201,7 @@ export default function Home() {
                   />
                 </div>
                 <p className="text-xs text-white/80 font-medium">
-                  {progressPercentage >= 100 ? "Ziel erreicht! 🎉" : `${Math.floor(progressPercentage)}% bis zum ${targetHours}-Stunden-Ziel`}
+                  {progressPercentage >= 100 ? "Ziel erreicht!" : `${Math.floor(progressPercentage)}% bis zum ${targetHours}-Stunden-Ziel`}
                 </p>
               </div>
             </div>
