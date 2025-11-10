@@ -25,9 +25,13 @@ export interface Translations {
   disableNotifications: string;
   notificationsEnabled: string;
   notificationsDisabled: string;
+  notificationsEnabledDescription: string;
+  notificationsDisabledDescription: string;
+  notificationsError: string;
   
   minimumMealInterval: string;
   minimumMealIntervalDesc: string;
+  minimumMealIntervalValidation: string;
   currentInterval: string;
   saveInterval: string;
   
@@ -35,6 +39,7 @@ export interface Translations {
   quietHoursDesc: string;
   quietHoursStart: string;
   quietHoursEnd: string;
+  quietHoursValidation: string;
   saveQuietHours: string;
   
   editLastMeal: string;
