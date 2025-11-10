@@ -79,15 +79,15 @@ export const translations: Record<Language, Translations> = {
     trackMeal: 'Track Meal',
     lastMeal: 'Last Meal',
     noMealYet: 'No meal tracked yet',
-    targetGoal: 'target',
+    targetGoal: 'minimum',
     
     // Settings Page
     settings: 'Settings',
     notifications: 'Notifications',
-    notificationsDescription: 'Receive reminders when you reach your target hours',
+    notificationsDescription: 'Receive reminders when you reach the minimum time between meals',
     enableNotifications: 'Enable Notifications',
-    targetHours: 'Target Hours',
-    targetHoursDescription: 'Set your fasting goal (1-24 hours)',
+    targetHours: 'Minimum Time Between Meals',
+    targetHoursDescription: 'Set the minimum interval between meals (1-24 hours)',
     hours: 'hours',
     editLastMeal: 'Edit Last Meal',
     editLastMealDescription: 'Manually adjust your last meal time',
@@ -109,7 +109,7 @@ export const translations: Record<Language, Translations> = {
     notificationsDisabled: 'Notifications disabled',
     
     // Toast Messages
-    targetHoursSaved: 'Target hours saved',
+    targetHoursSaved: 'Minimum interval saved',
     mealTimeUpdated: 'Meal time updated',
     mealDeleted: 'Meal deleted',
     invalidInput: 'Invalid input',
@@ -138,15 +138,15 @@ export const translations: Record<Language, Translations> = {
     trackMeal: 'Mahlzeit erfassen',
     lastMeal: 'Letzte Mahlzeit',
     noMealYet: 'Noch keine Mahlzeit erfasst',
-    targetGoal: 'Ziel',
+    targetGoal: 'Mindestabstand',
     
     // Settings Page
     settings: 'Einstellungen',
     notifications: 'Benachrichtigungen',
-    notificationsDescription: 'Erhalte Erinnerungen bei Erreichen deiner Zielzeit',
+    notificationsDescription: 'Erhalte Erinnerungen bei Erreichen des Mindestabstands zwischen Mahlzeiten',
     enableNotifications: 'Benachrichtigungen aktivieren',
-    targetHours: 'Zielzeit',
-    targetHoursDescription: 'Lege dein Fastenziel fest (1-24 Stunden)',
+    targetHours: 'Mindestabstand zwischen Mahlzeiten',
+    targetHoursDescription: 'Lege den Mindestabstand zwischen Mahlzeiten fest (1-24 Stunden)',
     hours: 'Stunden',
     editLastMeal: 'Letzte Mahlzeit bearbeiten',
     editLastMealDescription: 'Passe deine letzte Mahlzeit manuell an',
@@ -168,7 +168,7 @@ export const translations: Record<Language, Translations> = {
     notificationsDisabled: 'Benachrichtigungen deaktiviert',
     
     // Toast Messages
-    targetHoursSaved: 'Zielzeit gespeichert',
+    targetHoursSaved: 'Mindestabstand gespeichert',
     mealTimeUpdated: 'Mahlzeit aktualisiert',
     mealDeleted: 'Mahlzeit gelöscht',
     invalidInput: 'Ungültige Eingabe',
@@ -197,15 +197,15 @@ export const translations: Record<Language, Translations> = {
     trackMeal: 'Registrar Comida',
     lastMeal: 'Última Comida',
     noMealYet: 'Aún no se ha registrado ninguna comida',
-    targetGoal: 'objetivo',
+    targetGoal: 'mínimo',
     
     // Settings Page
     settings: 'Configuración',
     notifications: 'Notificaciones',
-    notificationsDescription: 'Recibe recordatorios al alcanzar tus horas objetivo',
+    notificationsDescription: 'Recibe recordatorios al alcanzar el intervalo mínimo entre comidas',
     enableNotifications: 'Activar Notificaciones',
-    targetHours: 'Horas Objetivo',
-    targetHoursDescription: 'Establece tu meta de ayuno (1-24 horas)',
+    targetHours: 'Intervalo mínimo entre comidas',
+    targetHoursDescription: 'Establece el intervalo mínimo entre comidas (1-24 horas)',
     hours: 'horas',
     editLastMeal: 'Editar Última Comida',
     editLastMealDescription: 'Ajusta manualmente la hora de tu última comida',
@@ -227,7 +227,7 @@ export const translations: Record<Language, Translations> = {
     notificationsDisabled: 'Notificaciones desactivadas',
     
     // Toast Messages
-    targetHoursSaved: 'Horas objetivo guardadas',
+    targetHoursSaved: 'Intervalo mínimo guardado',
     mealTimeUpdated: 'Hora de comida actualizada',
     mealDeleted: 'Comida eliminada',
     invalidInput: 'Entrada inválida',
