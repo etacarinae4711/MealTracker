@@ -20,6 +20,9 @@ export const STORAGE_KEYS = {
   
   /** User's target hours (1-24) for meal interval goals */
   TARGET_HOURS: "targetHours",
+  
+  /** User's preferred language (en, de, es) */
+  LANGUAGE: "language",
 } as const;
 
 /**
@@ -77,4 +80,17 @@ export const BADGE_CONFIG = {
 export const TIMER_CONFIG = {
   /** Update interval in milliseconds (updates every second) */
   UPDATE_INTERVAL_MS: TIME.SECOND_MS,
+} as const;
+
+/**
+ * Language configuration
+ * 
+ * Defines supported languages and default language preference
+ */
+export const LANGUAGE_CONFIG = {
+  /** Default language when no preference is set */
+  DEFAULT: 'en' as const,
+  
+  /** List of supported language codes */
+  SUPPORTED: ['en', 'de', 'es'] as const,
 } as const;
