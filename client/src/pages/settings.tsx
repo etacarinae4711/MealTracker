@@ -268,8 +268,8 @@ export default function Settings() {
       setIsEditDialogOpen(true);
     } else {
       toast({
-        title: "Keine Mahlzeit",
-        description: "Bitte tracken Sie zuerst eine Mahlzeit",
+        title: t.noMealYet,
+        description: t.noMealYetDesc,
         variant: "destructive",
       });
     }
@@ -316,8 +316,8 @@ export default function Settings() {
 
       setIsEditDialogOpen(false);
       toast({
-        title: "Mahlzeit aktualisiert",
-        description: "Die letzte Mahlzeit wurde bearbeitet",
+        title: t.success,
+        description: t.editLastMeal,
       });
     }
   };
@@ -333,20 +333,52 @@ export default function Settings() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">Einstellungen</h1>
-            <p className="text-sm text-muted-foreground">Passen Sie Ihre Präferenzen an</p>
+            <h1 className="text-3xl font-bold">{t.settingsTitle}</h1>
+            <p className="text-sm text-muted-foreground">{t.settingsDescription}</p>
           </div>
         </div>
+
+        {/* Edit Last Meal Card - MOVED TO TOP - only shown when meal exists */}
+        {lastMealTime && (
+          <Card data-testid="card-edit-meal">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Pencil className="h-5 w-5" />
+                {t.editLastMeal}
+              </CardTitle>
+              <CardDescription>
+                {t.editLastMealDesc}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">{t.lastMeal}: </span>
+                  <span className="font-medium">{formatDateTime(lastMealTime)}</span>
+                </div>
+                <Button
+                  onClick={handleEditMeal}
+                  variant="outline"
+                  className="w-full"
+                  data-testid="button-edit-meal"
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  {t.changeTime}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Notifications Card */}
         <Card data-testid="card-notifications">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
-              Benachrichtigungen
+              {t.pushNotifications}
             </CardTitle>
             <CardDescription>
-              Push-Benachrichtigungen für Erinnerungen
+              {t.pushNotificationsDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -359,18 +391,18 @@ export default function Settings() {
               {notificationsEnabled ? (
                 <>
                   <Bell className="mr-2 h-4 w-4" />
-                  Benachrichtigungen aktiv
+                  {t.notificationsActive}
                 </>
               ) : (
                 <>
                   <BellOff className="mr-2 h-4 w-4" />
-                  Benachrichtigungen aktivieren
+                  {t.enableNotifications}
                 </>
               )}
             </Button>
             {notificationsEnabled && (
               <p className="text-xs text-muted-foreground mt-3 text-center">
-                Sie erhalten Erinnerungen nach {targetHours}+ Stunden und tägliche Reminders um 9:00 Uhr
+                {t.notificationsEnabledDetailDesc.replace('{hours}', targetHours.toString())}
               </p>
             )}
           </CardContent>
@@ -381,10 +413,10 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Zielzeit festlegen
+              {t.minimumMealInterval}
             </CardTitle>
             <CardDescription>
-              Nach wie vielen Stunden möchten Sie erinnert werden?
+              {t.minimumMealIntervalDesc}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -407,7 +439,7 @@ export default function Settings() {
                   {String(parseInt(tempTargetHours, 10) || TARGET_HOURS_CONFIG.DEFAULT).padStart(2, '0')}
                 </div>
                 <div className="text-sm text-muted-foreground font-medium">
-                  Stunden
+                  {t.hours}
                 </div>
               </div>
               
@@ -424,7 +456,9 @@ export default function Settings() {
             </div>
             
             <p className="text-xs text-center text-muted-foreground">
-              Wählen Sie zwischen {TARGET_HOURS_CONFIG.MIN} und {TARGET_HOURS_CONFIG.MAX} Stunden
+              {t.minimumMealIntervalRange
+                .replace('{min}', TARGET_HOURS_CONFIG.MIN.toString())
+                .replace('{max}', TARGET_HOURS_CONFIG.MAX.toString())}
             </p>
             
             <Button
@@ -432,7 +466,7 @@ export default function Settings() {
               className="w-full"
               data-testid="button-save-target-hours"
             >
-              Speichern
+              {t.save}
             </Button>
           </CardContent>
         </Card>
@@ -445,7 +479,7 @@ export default function Settings() {
               {t.language}
             </CardTitle>
             <CardDescription>
-              Choose your preferred language
+              {t.languageDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -477,27 +511,39 @@ export default function Settings() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="quiet-start">{t.quietHoursStart}</Label>
-                <Input
-                  id="quiet-start"
-                  type="number"
-                  min="0"
-                  max="23"
+                <Select
                   value={tempQuietStart}
-                  onChange={(e) => setTempQuietStart(e.target.value)}
-                  data-testid="input-quiet-start"
-                />
+                  onValueChange={setTempQuietStart}
+                >
+                  <SelectTrigger id="quiet-start" data-testid="select-quiet-start">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <SelectItem key={i} value={i.toString()}>
+                        {String(i).padStart(2, '0')}:00
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="quiet-end">{t.quietHoursEnd}</Label>
-                <Input
-                  id="quiet-end"
-                  type="number"
-                  min="0"
-                  max="23"
+                <Select
                   value={tempQuietEnd}
-                  onChange={(e) => setTempQuietEnd(e.target.value)}
-                  data-testid="input-quiet-end"
-                />
+                  onValueChange={setTempQuietEnd}
+                >
+                  <SelectTrigger id="quiet-end" data-testid="select-quiet-end">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <SelectItem key={i} value={i.toString()}>
+                        {String(i).padStart(2, '0')}:00
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <Button
@@ -510,47 +556,15 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Edit Last Meal Card - only shown when meal exists */}
-        {lastMealTime && (
-          <Card data-testid="card-edit-meal">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Pencil className="h-5 w-5" />
-                Letzte Mahlzeit bearbeiten
-              </CardTitle>
-              <CardDescription>
-                Aktualisieren Sie die Zeit Ihrer letzten Mahlzeit
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Letzte Mahlzeit: </span>
-                  <span className="font-medium">{formatDateTime(lastMealTime)}</span>
-                </div>
-                <Button
-                  onClick={handleEditMeal}
-                  variant="outline"
-                  className="w-full"
-                  data-testid="button-edit-meal"
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Zeit ändern
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* History Card */}
         <Card data-testid="card-history">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
-              Mahlzeiten-Historie
+              {t.mealHistory}
             </CardTitle>
             <CardDescription>
-              Alle aufgezeichneten Mahlzeiten anzeigen
+              {t.mealHistoryDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -561,7 +575,7 @@ export default function Settings() {
               data-testid="button-show-history"
             >
               <History className="mr-2 h-4 w-4" />
-              Historie anzeigen ({mealHistory.length})
+              {t.showHistory} ({mealHistory.length})
             </Button>
           </CardContent>
         </Card>
@@ -570,11 +584,11 @@ export default function Settings() {
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent data-testid="dialog-edit-meal">
             <DialogHeader>
-              <DialogTitle>Letzte Mahlzeit bearbeiten</DialogTitle>
+              <DialogTitle>{t.editLastMeal}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-date">Datum</Label>
+                <Label htmlFor="edit-date">{t.date}</Label>
                 <Input
                   id="edit-date"
                   type="date"
@@ -584,7 +598,7 @@ export default function Settings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-time">Uhrzeit</Label>
+                <Label htmlFor="edit-time">{t.time}</Label>
                 <Input
                   id="edit-time"
                   type="time"
@@ -599,13 +613,13 @@ export default function Settings() {
                   onClick={() => setIsEditDialogOpen(false)}
                   data-testid="button-cancel-edit"
                 >
-                  Abbrechen
+                  {t.cancel}
                 </Button>
                 <Button
                   onClick={handleSaveEdit}
                   data-testid="button-save-edit"
                 >
-                  Speichern
+                  {t.save}
                 </Button>
               </div>
             </div>
@@ -616,12 +630,12 @@ export default function Settings() {
         <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
           <DialogContent data-testid="dialog-history" className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Mahlzeiten-Historie</DialogTitle>
+              <DialogTitle>{t.mealHistory}</DialogTitle>
             </DialogHeader>
             <ScrollArea className="h-[400px] pr-4">
               {mealHistory.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Noch keine Mahlzeiten aufgezeichnet
+                  {t.noHistory}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -634,7 +648,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-semibold text-foreground">
-                            Mahlzeit {mealHistory.length - index}
+                            {t.mealNumber} {mealHistory.length - index}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {formatDateTime(meal.timestamp)}
@@ -642,7 +656,7 @@ export default function Settings() {
                         </div>
                         {index === 0 && (
                           <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-md">
-                            Aktuell
+                            {t.current}
                           </span>
                         )}
                       </div>

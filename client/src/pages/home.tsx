@@ -189,7 +189,7 @@ export default function Home() {
             Mealtracker
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
-            Verfolgen Sie die Zeit seit Ihrer letzten Mahlzeit
+            {t.appSubtitle}
           </p>
         </div>
 
@@ -202,7 +202,7 @@ export default function Home() {
             data-testid="button-track-meal"
           >
             <Utensils className="mr-3 h-6 w-6" />
-            Track Meal
+            {t.trackMeal}
           </Button>
         </div>
 
@@ -218,9 +218,9 @@ export default function Home() {
               data-testid="timer-display"
             >
               <p className="text-sm font-semibold uppercase tracking-wide text-white mb-4">
-                Zeit seit letzter Mahlzeit
+                {t.timeSinceLastMeal}
               </p>
-              <p className="text-5xl md:text-6xl font-bold text-white" data-testid="timer-value">
+              <p className="text-3xl md:text-4xl font-bold text-white" data-testid="timer-value">
                 {formatElapsedTime(elapsedTime)}
               </p>
               
@@ -228,8 +228,8 @@ export default function Home() {
               <div className="mt-6 space-y-2">
                 {/* Progress labels */}
                 <div className="flex justify-between text-xs text-white/90 font-medium">
-                  <span>{progressHours}h {progressMinutes}m</span>
-                  <span>{targetHours}h Ziel</span>
+                  <span>{progressHours}{t.hoursShort} {progressMinutes}{t.minutesShort}</span>
+                  <span>{targetHours}{t.hoursShort} {t.target}</span>
                 </div>
                 
                 {/* Progress bar */}
@@ -239,7 +239,7 @@ export default function Home() {
                   aria-valuenow={Math.floor(progressPercentage)}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-label={`Fortschritt bis zum ${targetHours}-Stunden-Ziel`}
+                  aria-label={t.progressLabel.replace('{hours}', targetHours.toString())}
                 >
                   <div 
                     className="h-full bg-white transition-all duration-300"
@@ -251,8 +251,10 @@ export default function Home() {
                 {/* Progress text */}
                 <p className="text-xs text-white/80 font-medium">
                   {progressPercentage >= 100 
-                    ? "Ziel erreicht!" 
-                    : `${Math.floor(progressPercentage)}% bis zum ${targetHours}-Stunden-Ziel`
+                    ? t.goalReached
+                    : t.progressToGoal
+                        .replace('{percentage}', Math.floor(progressPercentage).toString())
+                        .replace('{hours}', targetHours.toString())
                   }
                 </p>
               </div>
@@ -264,13 +266,13 @@ export default function Home() {
         {lastMealTime === null && (
           <div className="rounded-2xl p-8 md:p-12 text-center bg-muted border border-border">
             <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
-              Zeit seit letzter Mahlzeit
+              {t.timeSinceLastMeal}
             </p>
-            <p className="text-5xl md:text-6xl font-bold text-muted-foreground">
+            <p className="text-3xl md:text-4xl font-bold text-muted-foreground">
               --:--:--
             </p>
             <p className="text-sm text-muted-foreground mt-4">
-              Klicken Sie auf "Track Meal" um zu beginnen
+              {t.noMealInstructions}
             </p>
           </div>
         )}
