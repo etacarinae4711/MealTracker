@@ -27,15 +27,21 @@
  * 6. Sends subscription to server for storage
  * 
  * @param lastMealTime - Optional timestamp of last meal (for immediate sync)
+ * @param quietHoursStart - Optional quiet hours start (0-23)
+ * @param quietHoursEnd - Optional quiet hours end (0-23)
  * @returns Promise resolving to true if successful, false otherwise
  * 
  * @example
- * const success = await registerPushNotifications(Date.now());
+ * const success = await registerPushNotifications(Date.now(), 22, 8);
  * if (success) {
  *   console.log("Push notifications enabled");
  * }
  */
-export async function registerPushNotifications(lastMealTime?: number): Promise<boolean> {
+export async function registerPushNotifications(
+  lastMealTime?: number,
+  quietHoursStart?: number,
+  quietHoursEnd?: number
+): Promise<boolean> {
   // Check browser support
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
     console.log("Push notifications not supported");
@@ -74,7 +80,9 @@ export async function registerPushNotifications(lastMealTime?: number): Promise<
           p256dh: arrayBufferToBase64(subscription.getKey("p256dh")),
           auth: arrayBufferToBase64(subscription.getKey("auth")),
         },
-        lastMealTime: lastMealTime || null,
+        lastMealTime: lastMealTime ?? null,
+        quietHoursStart: quietHoursStart ?? null,
+        quietHoursEnd: quietHoursEnd ?? null,
       }),
     });
 
@@ -117,6 +125,42 @@ export async function updateMealTime(lastMealTime: number): Promise<void> {
     }
   } catch (error) {
     console.error("Error updating meal time:", error);
+  }
+}
+
+/**
+ * Updates quiet hours settings on the server
+ * 
+ * Synchronizes quiet hours configuration with the server so that
+ * scheduled notifications respect the user's preference.
+ * 
+ * Called when:
+ * - User changes quiet hours in settings
+ * 
+ * @param quietHoursStart - Start hour (0-23)
+ * @param quietHoursEnd - End hour (0-23)
+ * 
+ * @example
+ * await updateQuietHours(22, 8);
+ */
+export async function updateQuietHours(quietHoursStart: number, quietHoursEnd: number): Promise<void> {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (subscription) {
+      await fetch("/api/push/update-meal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+          quietHoursStart,
+          quietHoursEnd,
+        }),
+      });
+    }
+  } catch (error) {
+    console.error("Error updating quiet hours:", error);
   }
 }
 

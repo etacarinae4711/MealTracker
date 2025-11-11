@@ -28,10 +28,40 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({
+const basePushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({
   id: true,
   createdAt: true,
 });
 
+export const insertPushSubscriptionSchema = basePushSubscriptionSchema.refine(
+  (data) => {
+    // If quiet hours are set, validate them
+    const start = data.quietHoursStart;
+    const end = data.quietHoursEnd;
+    
+    // If only one is set, that's invalid
+    if ((start === null || start === undefined) !== (end === null || end === undefined)) {
+      return false;
+    }
+    
+    // If both are set, validate them
+    if (start !== null && start !== undefined && end !== null && end !== undefined) {
+      // Both must be in range 0-23
+      if (start < 0 || start > 23 || end < 0 || end > 23) return false;
+      // Start must not equal end
+      if (start === end) return false;
+    }
+    
+    return true;
+  },
+  {
+    message: "Quiet hours must be between 0-23 and start must not equal end",
+  }
+);
+
+// Schema for updating push subscriptions (all fields optional except endpoint identification)
+export const updatePushSubscriptionSchema = basePushSubscriptionSchema.partial();
+
 export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+export type UpdatePushSubscription = z.infer<typeof updatePushSubscriptionSchema>;
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;

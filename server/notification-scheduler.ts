@@ -1,11 +1,52 @@
 import cron from "node-cron";
 import { storage } from "./storage";
 import { sendPushNotification } from "./push-service";
+import type { PushSubscription } from "@shared/schema";
 
 const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
 const lastNotificationSent = new Map<string, number>();
+
+/**
+ * Checks if current time is within quiet hours for a subscription
+ * 
+ * Quiet hours prevent notifications from being sent during specified time periods.
+ * This function handles edge cases like:
+ * - Quiet hours spanning midnight (e.g., 22:00 - 08:00)
+ * - Missing quiet hours configuration (returns false - not in quiet hours)
+ * - Invalid quiet hours (start === end) - returns false and logs warning
+ * 
+ * @param subscription - Push subscription with quiet hours settings
+ * @returns true if currently within quiet hours, false otherwise
+ */
+function isInQuietHours(subscription: PushSubscription): boolean {
+  // If no quiet hours configured, never in quiet hours
+  if (subscription.quietHoursStart === null || subscription.quietHoursEnd === null) {
+    return false;
+  }
+
+  const start = subscription.quietHoursStart;
+  const end = subscription.quietHoursEnd;
+
+  // Defensive: Check for invalid configuration (should be prevented by validation)
+  if (start === end || start < 0 || start > 23 || end < 0 || end > 23) {
+    console.warn(`[Quiet Hours] Invalid configuration for ${subscription.id.substring(0, 8)}: start=${start}, end=${end}`);
+    return false; // Don't block notifications if config is invalid
+  }
+
+  const now = new Date();
+  const currentHour = now.getHours();
+
+  // Handle edge case: quiet hours span midnight (e.g., 22:00 - 08:00)
+  if (start > end) {
+    // We're in quiet hours if: currentHour >= start OR currentHour < end
+    return currentHour >= start || currentHour < end;
+  }
+
+  // Normal case: quiet hours within same day (e.g., 01:00 - 06:00)
+  return currentHour >= start && currentHour < end;
+}
 
 export function startNotificationScheduler() {
   // Stündlicher Badge-Update (stille Push)
@@ -56,6 +97,12 @@ export function startNotificationScheduler() {
           continue;
         }
 
+        // Check quiet hours - skip audible notifications
+        if (isInQuietHours(subscription)) {
+          console.log(`[3h Scheduler] Skipping ${subscription.id.substring(0, 8)} - in quiet hours (${subscription.quietHoursStart}:00-${subscription.quietHoursEnd}:00)`);
+          continue;
+        }
+
         const timeSinceLastMeal = now - subscription.lastMealTime;
         const hoursAgoRaw = Math.floor(timeSinceLastMeal / (60 * 60 * 1000));
         const hoursAgo = Math.min(hoursAgoRaw, 99);
@@ -100,7 +147,15 @@ export function startNotificationScheduler() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
+      console.log(`[Daily Reminder] Checking ${subscriptions.length} subscriptions at ${new Date().toISOString()}`);
+
       for (const subscription of subscriptions) {
+        // Check quiet hours - skip audible notifications
+        if (isInQuietHours(subscription)) {
+          console.log(`[Daily Reminder] Skipping ${subscription.id.substring(0, 8)} - in quiet hours (${subscription.quietHoursStart}:00-${subscription.quietHoursEnd}:00)`);
+          continue;
+        }
+
         const lastReminder = subscription.lastDailyReminder 
           ? new Date(subscription.lastDailyReminder) 
           : null;
@@ -110,10 +165,12 @@ export function startNotificationScheduler() {
           lastReminderDay.setHours(0, 0, 0, 0);
           
           if (lastReminderDay >= today) {
+            console.log(`[Daily Reminder] Skipping ${subscription.id.substring(0, 8)} - already sent today`);
             continue;
           }
         }
 
+        console.log(`[Daily Reminder] Sending to ${subscription.id.substring(0, 8)}`);
         const success = await sendPushNotification(subscription, {
           title: "Mealtracker",
           body: "Hast du heute schon Meals getrackt?",
@@ -122,9 +179,12 @@ export function startNotificationScheduler() {
         });
 
         if (success) {
+          console.log(`[Daily Reminder] ✅ Sent successfully to ${subscription.id.substring(0, 8)}`);
           await storage.updatePushSubscription(subscription.id, {
             lastDailyReminder: new Date(),
           });
+        } else {
+          console.log(`[Daily Reminder] ❌ Failed for ${subscription.id.substring(0, 8)}`);
         }
       }
     } catch (error) {

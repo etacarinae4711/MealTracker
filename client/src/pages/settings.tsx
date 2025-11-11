@@ -28,6 +28,7 @@ import {
   unregisterPushNotifications,
   isPushNotificationEnabled,
   updateMealTime,
+  updateQuietHours as syncQuietHours,
 } from "@/lib/push-notifications";
 import { useToast } from "@/hooks/use-toast";
 import { useMealTracker } from "@/hooks/use-meal-tracker";
@@ -120,8 +121,12 @@ export default function Settings() {
         description: t.notificationsDisabledDescription,
       });
     } else {
-      // Enable notifications
-      const success = await registerPushNotifications(lastMealTime || undefined);
+      // Enable notifications with current quiet hours settings
+      const success = await registerPushNotifications(
+        lastMealTime || undefined,
+        quietHoursStart,
+        quietHoursEnd
+      );
       if (success) {
         setNotificationsEnabled(true);
         toast({
@@ -196,10 +201,12 @@ export default function Settings() {
     });
   };
 
-  const handleSaveQuietHours = () => {
+  const handleSaveQuietHours = async () => {
+    // Parse and validate inputs
     const start = parseInt(tempQuietStart, 10);
     const end = parseInt(tempQuietEnd, 10);
     
+    // Check for NaN or out of range
     if (isNaN(start) || isNaN(end) || start < 0 || start > 23 || end < 0 || end > 23) {
       toast({
         title: t.error,
@@ -209,7 +216,22 @@ export default function Settings() {
       return;
     }
 
+    // Check if start equals end (invalid - must have a time range)
+    if (start === end) {
+      toast({
+        title: t.error,
+        description: t.quietHoursValidation,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update local state (persists to localStorage)
     updateQuietHours(start, end);
+    
+    // Always sync with server if push subscription exists (even if notifications disabled)
+    // This ensures backend has latest values for when notifications are re-enabled
+    await syncQuietHours(start, end);
     
     toast({
       title: t.saved,
@@ -435,7 +457,7 @@ export default function Settings() {
               {t.quietHours}
             </CardTitle>
             <CardDescription>
-              {t.quietHoursDescription}
+              {t.quietHoursDesc}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -470,7 +492,7 @@ export default function Settings() {
               className="w-full"
               data-testid="button-save-quiet-hours"
             >
-              {t.save}
+              {t.saveQuietHours}
             </Button>
           </CardContent>
         </Card>
