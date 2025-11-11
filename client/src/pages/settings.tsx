@@ -208,6 +208,9 @@ export default function Settings() {
     
     // Check for NaN or out of range
     if (isNaN(start) || isNaN(end) || start < 0 || start > 23 || end < 0 || end > 23) {
+      // Reset inputs to saved values on validation failure
+      setTempQuietStart(quietHoursStart.toString());
+      setTempQuietEnd(quietHoursEnd.toString());
       toast({
         title: t.error,
         description: t.quietHoursValidation,
@@ -218,6 +221,9 @@ export default function Settings() {
 
     // Check if start equals end (invalid - must have a time range)
     if (start === end) {
+      // Reset inputs to saved values on validation failure
+      setTempQuietStart(quietHoursStart.toString());
+      setTempQuietEnd(quietHoursEnd.toString());
       toast({
         title: t.error,
         description: t.quietHoursValidation,
@@ -226,13 +232,20 @@ export default function Settings() {
       return;
     }
 
-    // Update local state (persists to localStorage)
+    // Update local state first (localStorage is source of truth)
     updateQuietHours(start, end);
     
-    // Always sync with server if push subscription exists (even if notifications disabled)
-    // This ensures backend has latest values for when notifications are re-enabled
-    await syncQuietHours(start, end);
+    try {
+      // Try to sync with server (will be no-op if notifications disabled)
+      // This ensures backend has latest values when notifications are enabled
+      await syncQuietHours(start, end);
+    } catch (error) {
+      // Log sync error but don't prevent local update
+      // User can still configure quiet hours for when they re-enable notifications
+      console.warn("Failed to sync quiet hours with server:", error);
+    }
     
+    // Always show success toast after local update
     toast({
       title: t.saved,
       description: `${t.quietHours}: ${start}:00 - ${end}:00`,

@@ -134,33 +134,46 @@ export async function updateMealTime(lastMealTime: number): Promise<void> {
  * Synchronizes quiet hours configuration with the server so that
  * scheduled notifications respect the user's preference.
  * 
+ * If no active subscription exists (notifications disabled), this is a no-op.
+ * The quiet hours will be sent to the server when notifications are re-enabled.
+ * 
  * Called when:
  * - User changes quiet hours in settings
  * 
  * @param quietHoursStart - Start hour (0-23)
  * @param quietHoursEnd - End hour (0-23)
+ * @throws Error if server request fails (but not if no subscription exists)
  * 
  * @example
- * await updateQuietHours(22, 8);
+ * try {
+ *   await updateQuietHours(22, 8);
+ * } catch (error) {
+ *   console.error("Failed to sync quiet hours:", error);
+ * }
  */
 export async function updateQuietHours(quietHoursStart: number, quietHoursEnd: number): Promise<void> {
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
 
-    if (subscription) {
-      await fetch("/api/push/update-meal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          endpoint: subscription.endpoint,
-          quietHoursStart,
-          quietHoursEnd,
-        }),
-      });
-    }
-  } catch (error) {
-    console.error("Error updating quiet hours:", error);
+  // No subscription exists (notifications disabled) - this is okay
+  // The quiet hours will be sent when notifications are re-enabled
+  if (!subscription) {
+    return;
+  }
+
+  const response = await fetch("/api/push/update-meal", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      endpoint: subscription.endpoint,
+      quietHoursStart,
+      quietHoursEnd,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(error.error || "Failed to update quiet hours");
   }
 }
 
