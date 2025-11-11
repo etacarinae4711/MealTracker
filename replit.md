@@ -4,27 +4,51 @@
 
 Mealtracker is a minimal, mobile-first Progressive Web App (PWA) designed to track the time elapsed since a user's last meal. The app features a clean interface with a prominent "Track Meal" button (teal color with 3D effect) and a real-time timer display. Built with a focus on simplicity, maintainability, and code quality, it provides an intuitive user experience while maintaining a well-documented, type-safe codebase.
 
-## Recent Changes (2025-11-10)
+## Recent Changes (2025-11-11)
+
+### Complete UI Refinement & Full Internationalization
+- **Target Hours Label Update**: Changed to more descriptive wording
+  - German: "Ziel-Zeit zwischen zwei Mahlzeiten"
+  - English: "Target Time Between Meals"
+  - Spanish: "Tiempo objetivo entre comidas"
+  - Previous label removed for clarity
+
+- **Timer Display Size Reduction**: Made timer more compact
+  - Changed from text-5xl md:text-6xl to text-3xl md:text-4xl
+  - Better visual balance on mobile devices
+  - Maintains readability while reducing prominence
+
+- **Complete Internationalization (100% Coverage)**: All UI text now translatable
+  - Systematic grep audit eliminated ALL hard-coded strings in home.tsx and settings.tsx
+  - Extended translations.ts with 30+ new keys covering entire app
+  - All toasts, labels, buttons, descriptions use translation system
+  - Added minutesShort key for "m" suffix in progress display
+  - Verified via multi-pass regex scans: only imports, CSS, data-testid remain as literals
+
+- **Settings Page Reorganization**: Improved UX flow
+  - "Edit Last Meal" card moved to top position (first card)
+  - New order: Edit Last Meal → Notifications → Target Hours → Quiet Hours → Language → History
+  - More logical flow for common tasks
+
+- **Quiet Hours Time-Picker Upgrade**: Better UX with Select components
+  - Replaced number inputs with Select dropdowns
+  - Shows formatted times (00:00 - 23:00)
+  - data-testid updated: "input-quiet-start/end" → "select-quiet-start/end"
+  - Prevents invalid time entry, clearer visual feedback
+
+### Previous Changes (2025-11-10)
 
 ### Multi-Language Support & Quiet Hours Implementation
 - **Multi-Language System**: Complete EN/DE/ES translations via translations.ts
   - Language context provider wraps entire app (App.tsx with LanguageProvider)
   - useLanguage hook provides translation keys and language switching
   - Language selector card in Settings page
-  - All critical user-facing strings now use t.* translation keys
   
 - **Quiet Hours Feature**: Configurable notification quiet periods
   - Database schema extended with quietHoursStart/End columns (pushSubscriptions table)
   - Constants.ts with QUIET_HOURS_CONFIG (default 22:00-08:00)
   - use-meal-tracker hook manages quiet hours state and localStorage persistence
-  - Settings page includes Quiet Hours card with start/end time inputs
   - Quiet hours stored in localStorage and ready for backend sync
-  
-- **Translation Coverage**: All toasts and validation messages now translated
-  - handleToggleNotifications: Uses t.notificationsEnabled/Disabled/Error
-  - handleSaveTargetHours: Uses t.minimumMealIntervalValidation
-  - handleSaveQuietHours: Uses t.quietHoursValidation
-  - No hard-coded strings in critical handlers
 
 ### Feature Complete Refactoring
 - **Code Organization**: Extracted shared logic into reusable modules
