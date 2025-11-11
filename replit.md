@@ -2,246 +2,87 @@
 
 ## Overview
 
-Mealtracker is a minimal, mobile-first Progressive Web App (PWA) designed to track the time elapsed since a user's last meal. The app features a clean interface with a prominent "Track Meal" button (teal color with 3D effect) and a real-time timer display. Built with a focus on simplicity, maintainability, and code quality, it provides an intuitive user experience while maintaining a well-documented, type-safe codebase.
-
-## Recent Changes (2025-11-11)
-
-### Complete UI Refinement & Full Internationalization
-- **Target Hours Label Update**: Changed to more descriptive wording
-  - German: "Ziel-Zeit zwischen zwei Mahlzeiten"
-  - English: "Target Time Between Meals"
-  - Spanish: "Tiempo objetivo entre comidas"
-  - Previous label removed for clarity
-
-- **Timer Display Size Reduction**: Made timer more compact
-  - Changed from text-5xl md:text-6xl to text-3xl md:text-4xl
-  - Better visual balance on mobile devices
-  - Maintains readability while reducing prominence
-
-- **Complete Internationalization (100% Coverage)**: All UI text now translatable
-  - Systematic grep audit eliminated ALL hard-coded strings in home.tsx and settings.tsx
-  - Extended translations.ts with 30+ new keys covering entire app
-  - All toasts, labels, buttons, descriptions use translation system
-  - Added minutesShort key for "m" suffix in progress display
-  - Verified via multi-pass regex scans: only imports, CSS, data-testid remain as literals
-
-- **Settings Page Reorganization**: Improved UX flow
-  - "Edit Last Meal" card moved to top position (first card)
-  - New order: Edit Last Meal → Notifications → Target Hours → Quiet Hours → Language → History
-  - More logical flow for common tasks
-
-- **Quiet Hours Time-Picker Upgrade**: Better UX with Select components
-  - Replaced number inputs with Select dropdowns
-  - Shows formatted times (00:00 - 23:00)
-  - data-testid updated: "input-quiet-start/end" → "select-quiet-start/end"
-  - Prevents invalid time entry, clearer visual feedback
-
-### Previous Changes (2025-11-10)
-
-### Multi-Language Support & Quiet Hours Implementation
-- **Multi-Language System**: Complete EN/DE/ES translations via translations.ts
-  - Language context provider wraps entire app (App.tsx with LanguageProvider)
-  - useLanguage hook provides translation keys and language switching
-  - Language selector card in Settings page
-  
-- **Quiet Hours Feature**: Configurable notification quiet periods
-  - Database schema extended with quietHoursStart/End columns (pushSubscriptions table)
-  - Constants.ts with QUIET_HOURS_CONFIG (default 22:00-08:00)
-  - use-meal-tracker hook manages quiet hours state and localStorage persistence
-  - Quiet hours stored in localStorage and ready for backend sync
-
-### Feature Complete Refactoring
-- **Code Organization**: Extracted shared logic into reusable modules
-  - `client/src/lib/constants.ts` - Centralized configuration values
-  - `client/src/lib/time-utils.ts` - Time formatting and calculation utilities
-  - `client/src/types/meal-tracker.ts` - TypeScript type definitions
-  - `client/src/hooks/use-meal-tracker.ts` - Custom hook for meal state management
-  
-- **Documentation**: Added comprehensive JSDoc comments throughout codebase
-  - Every function documented with purpose, parameters, and examples
-  - Module-level documentation explaining architecture decisions
-  - Inline comments for complex logic and side effects
-  
-- **Dedicated Settings Page**: Created `/settings` route consolidating all configuration
-  - Push notification management
-  - Target hours configuration with +/- controls
-  - Last meal editing functionality
-  - Complete meal history viewer
-  
-- **Simplified Homepage**: Focused on core meal tracking functionality
-  - Prominent "Track Meal" button with 3D effect
-  - Real-time timer with progress visualization
-  - Settings access via icon button
+Mealtracker is a minimal, mobile-first Progressive Web App (PWA) designed to track the time elapsed since a user's last meal. It features a clean, intuitive interface with a prominent "Track Meal" button and a real-time timer display. The project prioritizes simplicity, maintainability, and code quality, offering a well-documented, type-safe codebase and an intuitive user experience. Key capabilities include multi-language support (English, German, Spanish), configurable push notifications with quiet hours, and a comprehensive settings page for managing meal history and preferences. The business vision is to provide a highly efficient and user-friendly tool for meal tracking, enhancing personal health management with minimal friction.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-## Code Architecture
+## Recent Changes
 
-### File Structure
+### 2025-11-11: Complete UI Refinement & Full Internationalization
+- **Target Hours Label Update**: Changed to more descriptive wording
+  - German: "Ziel-Zeit zwischen zwei Mahlzeiten"
+  - English: "Target Time Between Meals"
+  - Spanish: "Tiempo objetivo entre comidas"
 
-```
-client/src/
-├── components/        # Shadcn UI components
-├── hooks/            # Custom React hooks
-│   └── use-meal-tracker.ts  # Centralized meal state management
-├── lib/              # Utility libraries
-│   ├── constants.ts         # App-wide constants (storage keys, time values, config)
-│   ├── time-utils.ts        # Time formatting and calculation functions
-│   ├── push-notifications.ts # Push API and service worker management
-│   └── queryClient.ts       # TanStack Query configuration
-├── pages/            # Route components
-│   ├── home.tsx            # Main tracking interface
-│   └── settings.tsx        # Settings and configuration
-└── types/            # TypeScript definitions
-    └── meal-tracker.ts    # Shared type definitions and type guards
-```
+- **Timer Display Size Reduction**: Made timer more compact
+  - Changed from text-5xl md:text-6xl to text-3xl md:text-4xl
+  - Better visual balance on mobile devices
+
+- **Complete Internationalization (100% Coverage)**:
+  - Systematic grep audit eliminated ALL hard-coded strings in home.tsx and settings.tsx
+  - Extended translations.ts with 30+ new keys covering entire app
+  - All toasts, labels, buttons, descriptions use translation system
+  - Added minutesShort key for "m" suffix in progress display
+  - Verified via multi-pass regex scans
+
+- **Settings Page Reorganization**:
+  - "Edit Last Meal" card moved to top position
+  - New order: Edit Last Meal → Notifications → Target Hours → Quiet Hours → Language → History
+
+- **Quiet Hours Time-Picker Upgrade**:
+  - Replaced number inputs with Select dropdowns
+  - Shows formatted times (00:00 - 23:00)
+  - Prevents invalid time entry
+
+### 2025-11-10: Multi-Language Support & Quiet Hours Implementation
+- Complete EN/DE/ES translations via translations.ts
+- Language context provider wraps entire app
+- Quiet hours feature with database and UI support
+- Server-side notification scheduling
+
+## System Architecture
+
+### Core Design Principles
+- **Mobile-First & PWA**: Optimized for mobile devices, offering offline capabilities and push notifications.
+- **Minimalist UI**: Apple HIG-inspired design with a focus on clarity and essential functionality.
+- **Type-Safety**: Extensive use of TypeScript across the codebase.
+- **Internationalization**: Full support for English, German, and Spanish, with all UI strings externalized.
 
 ### Key Design Patterns
-
-**Custom Hook Pattern (`use-meal-tracker.ts`)**
-- Encapsulates all meal tracking logic and localStorage persistence
-- Provides clean API: `trackMeal()`, `updateLastMealTime()`, `updateTargetHours()`
-- Handles data validation and sanitization
-- Ensures single source of truth for meal state
-
-**Utility Modules**
-- `constants.ts`: Eliminates magic numbers and centralizes configuration
-- `time-utils.ts`: Pure functions for time operations, easily testable
-- Type guards in `meal-tracker.ts` for runtime type safety
-
-**Component Organization**
-- Pages are presentational, logic delegated to hooks and utilities
-- Effect hooks clearly documented with their purpose and dependencies
-- Event handlers named descriptively: `handleTrackMeal`, `handleSaveTargetHours`
+- **Internationalization Architecture**: A comprehensive i18n system using `translations.ts` and a `useLanguage()` hook for English, German, and Spanish support. All UI text is sourced from translation keys.
+- **Centralized State Hook (`use-meal-tracker.ts`)**: Manages all meal tracking state (last meal timestamp, history, target hours, quiet hours) with automatic localStorage persistence and type-safe operations.
+- **Utility Modules**: Pure functions for time operations (`time-utils.ts`), centralized constants (`constants.ts`), and PWA features (`push-notifications.ts`).
+- **Component Organization**: Clear separation of concerns with logic in hooks and utilities, and components focused on presentation.
 
 ### Frontend Architecture
-
-**Framework & Build System:**
-- React 18+ with TypeScript for type-safe component development
-- Vite as the build tool and development server, providing fast HMR
-- Wouter for client-side routing (lightweight alternative to React Router)
-
-**UI Component System:**
-- shadcn/ui component library (Radix UI primitives with Tailwind CSS styling)
-- Tailwind CSS for utility-first styling with custom design tokens
-- CSS variables for theming support
-
-**Design Philosophy:**
-- Mobile-first responsive design with maximum width of 480px
-- Apple HIG-inspired minimal utility design emphasizing clarity
-- Inter font family for optimal legibility
-- Consistent spacing system using Tailwind units
-- No emojis in UI (design guideline requirement)
-
-**State Management:**
-- Custom hooks (`use-meal-tracker`) for centralized state logic
-- TanStack Query for server state management
-- Browser localStorage for persistent data (meals, settings)
+- **Framework & Build System**: React 18+ with TypeScript, Vite for fast HMR, and Wouter for client-side routing.
+- **UI Component System**: shadcn/ui (Radix UI primitives with Tailwind CSS) for a consistent, utility-first styling.
+- **Design Philosophy**: Mobile-first responsive design, Apple HIG-inspired minimalism, Inter font family, and consistent spacing.
+- **State Management**: `use-meal-tracker` for meal-related state, `useLanguage` for global language state (both persisted in localStorage), and TanStack Query for server state.
+- **Internationalization**: Complete multilingual support with zero hard-coded UI strings, managed via `LanguageProvider` and `translations.ts`.
+- **Page Architecture**:
+    - **Home Page**: Features a "Track Meal" button, real-time timer display with progress bar, and local PWA badge updates.
+    - **Settings Page**: Card-based layout for editing last meal, push notifications, target hours, quiet hours (with select-based time pickers), language selection, and meal history.
 
 ### Backend Architecture
-
-**Server Framework:**
-- Express.js as the HTTP server framework
-- Node.js runtime with ESM module support
-- Custom Vite middleware integration for development with HMR
-
-**API Structure:**
-- RESTful API pattern with `/api` prefix
-- Push notification endpoints: `/api/push/*`
-- Modular route registration in `server/routes.ts`
+- **Server Framework**: Express.js with Node.js and custom Vite middleware.
+- **API Structure**: RESTful API for push notification management (`/api/push/subscribe`, `/api/push/unsubscribe`, etc.) with Zod validation.
+- **Notification Services**: `node-cron` based scheduling for hourly badge updates, target-hour reminders, and daily morning reminders. All notifications respect user-defined quiet hours.
+- **Storage Abstraction**: Interface-based design (`server/storage.ts`) for database operations, implemented with PostgreSQL via Drizzle ORM.
 
 ### Data Storage Solutions
+- **Client-Side Storage (localStorage)**: Stores `lastMealTime`, `mealHistory`, `targetHours`, `quietHours`, and `language`.
+- **Database (PostgreSQL)**: `pushSubscriptions` table stores subscription details, `lastMealTime` for scheduling, and user-specific quiet hours. Drizzle ORM is used for type-safe queries.
 
-**Client-Side Storage (localStorage):**
-- `lastMealTime`: Unix timestamp of most recent meal
-- `mealHistory`: Array of meal entries with timestamps and UUIDs
-- `targetHours`: User's goal interval (1-24, default 3)
-- Validation on load prevents corrupt data
+## External Dependencies
 
-**Database (PostgreSQL):**
-- Push subscriptions table storing endpoint, keys, and last meal time
-- Drizzle ORM for type-safe queries
-- Migrations via `drizzle-kit`
-
-**Push Notifications & Badge System:**
-- PWA app badge displays hours elapsed (0-99 maximum)
-- Local badge updates every minute (checks for hour changes)
-- Server-side hourly push notifications for background updates
-- Target-hour reminder notifications
-- Daily 9 AM reminder notifications
-
-### Code Quality & Maintainability
-
-**TypeScript Best Practices:**
-- Strict type checking enabled
-- Shared interfaces in `types/meal-tracker.ts`
-- Type guards for runtime validation (`supportsBadgeAPI`)
-- No `any` types used
-
-**Documentation Standards:**
-- JSDoc comments on all exported functions
-- Module-level documentation explaining purpose
-- Parameter and return type documentation
-- Usage examples in documentation
-- Comments explaining complex logic and side effects
-
-**Constants & Configuration:**
-- All magic numbers extracted to `constants.ts`
-- Configuration objects with descriptive names
-- `as const` assertions for type safety
-- Clear organization by category (storage, time, badge, etc.)
-
-**Testing Considerations:**
-- Pure utility functions in `time-utils.ts` easily unit testable
-- Components use dependency injection (hooks) for testability
-- Clear separation of concerns (UI, logic, persistence)
-- Comprehensive `data-testid` attributes for E2E testing
-
-### External Dependencies
-
-**UI Component Libraries:**
-- @radix-ui/* primitives for accessible components
-- Lucide React for consistent icon set
-- date-fns for date/time formatting
-
-**Form Management:**
-- @hookform/resolvers for validation
-- React Hook Form integration
-
-**Database & ORM:**
-- @neondatabase/serverless for PostgreSQL
-- drizzle-orm and drizzle-zod for type-safe database operations
-
-**Development Tools:**
-- TypeScript for static type checking
-- ESBuild for production builds
-- PostCSS with Autoprefixer
-
-**Styling:**
-- Tailwind CSS with custom configuration
-- class-variance-authority for component variants
-- clsx and tailwind-merge for conditional classes
-
-## Development Guidelines
-
-**When Adding New Features:**
-1. Add constants to `constants.ts` if introducing configuration
-2. Create utility functions in appropriate `lib/` file
-3. Update types in `types/meal-tracker.ts`
-4. Add comprehensive JSDoc documentation
-5. Use existing hooks and utilities instead of duplicating logic
-
-**Code Style:**
-- Descriptive variable and function names
-- Extract magic numbers to constants
-- Document complex logic with comments
-- Group related functionality together
-- Keep components focused and single-purpose
-
-**Type Safety:**
-- Define interfaces for all data structures
-- Use type guards for runtime checks
-- Leverage TypeScript's strict mode
-- Avoid type assertions unless necessary
+- **UI Component Libraries**: `@radix-ui/*`, Lucide React, `shadcn/ui`
+- **Date/Time Utilities**: `date-fns`
+- **Form Management**: `react-hook-form`, `@hookform/resolvers`
+- **Database & ORM**: `@neondatabase/serverless` (PostgreSQL), `drizzle-orm`, `drizzle-zod`
+- **Styling**: Tailwind CSS, `class-variance-authority`, `clsx`, `tailwind-merge`
+- **Scheduling**: `node-cron`
+- **Push Notifications**: `web-push`
+- **Development Tools**: TypeScript, Vite, ESBuild, PostCSS, Autoprefixer
