@@ -10,6 +10,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-11-12: Settings Page UI Optimization
+- **Target Hours Configuration Compacted**:
+  - Display size reduced: text-6xl (60px) → text-4xl (36px) for better balance
+  - +/- Buttons optimized: h-12 w-12 → h-11 w-11 (44px, mobile-friendly touch targets)
+  - Icons proportionally adjusted: h-5 w-5 → h-4 w-4
+  - Label compacted: text-sm → text-xs
+  - Gap reduced: gap-2 → gap-1
+
+- **Improved Visual Separation**:
+  - Card spacing increased: space-y-6 → space-y-8
+  - Better visual hierarchy and grouping of settings sections
+
 ### 2025-11-11: Complete UI Refinement & Full Internationalization
 - **Target Hours Label Update**: Changed to more descriptive wording
   - German: "Ziel-Zeit zwischen zwei Mahlzeiten"

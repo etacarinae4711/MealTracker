@@ -324,7 +324,7 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <div className="max-w-2xl mx-auto p-6 space-y-8">
         {/* Header with back button */}
         <div className="flex items-center gap-4">
           <Link href="/">
@@ -427,18 +427,18 @@ export default function Settings() {
                 size="icon"
                 onClick={handleDecreaseHours}
                 disabled={parseInt(tempTargetHours, 10) <= TARGET_HOURS_CONFIG.MIN}
-                className="h-12 w-12 rounded-full"
+                className="h-11 w-11 rounded-full"
                 data-testid="button-decrease-hours"
               >
-                <Minus className="h-5 w-5" />
+                <Minus className="h-4 w-4" />
               </Button>
               
-              {/* Large 2-digit display */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="text-6xl font-bold text-primary tabular-nums" data-testid="display-target-hours">
+              {/* Compact 2-digit display */}
+              <div className="flex flex-col items-center gap-1">
+                <div className="text-4xl font-bold text-primary tabular-nums" data-testid="display-target-hours">
                   {String(parseInt(tempTargetHours, 10) || TARGET_HOURS_CONFIG.DEFAULT).padStart(2, '0')}
                 </div>
-                <div className="text-sm text-muted-foreground font-medium">
+                <div className="text-xs text-muted-foreground font-medium">
                   {t.hours}
                 </div>
               </div>
@@ -448,10 +448,10 @@ export default function Settings() {
                 size="icon"
                 onClick={handleIncreaseHours}
                 disabled={parseInt(tempTargetHours, 10) >= TARGET_HOURS_CONFIG.MAX}
-                className="h-12 w-12 rounded-full"
+                className="h-11 w-11 rounded-full"
                 data-testid="button-increase-hours"
               >
-                <Plus className="h-5 w-5" />
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
             
