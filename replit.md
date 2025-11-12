@@ -22,6 +22,9 @@ Preferred communication style: Simple, everyday language.
   - Card spacing increased: space-y-6 → space-y-8
   - Better visual hierarchy and grouping of settings sections
 
+- **German Translation Refinement**:
+  - Target hours label updated: "Ziel-Zeit" → "Zielzeit" (removed hyphen)
+
 ### 2025-11-11: Complete UI Refinement & Full Internationalization
 - **Target Hours Label Update**: Changed to more descriptive wording
   - German: "Ziel-Zeit zwischen zwei Mahlzeiten"
