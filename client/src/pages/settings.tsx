@@ -4,11 +4,14 @@
  * Centralized settings page providing configuration for:
  * - Push notification management (enable/disable)
  * - Target hours configuration (1-24 hour range)
- * - Last meal editing (date and time adjustment)
+ * - Quiet hours configuration (notification-free time periods)
+ * - Language selection (EN/DE/ES)
  * - Complete meal history viewing
  * 
  * The page uses a card-based layout for clear organization
  * of different settings categories.
+ * 
+ * Note: Last meal editing is now on the home page, not here.
  * 
  * @module pages/settings
  */
@@ -18,16 +21,14 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bell, BellOff, Plus, Minus, ArrowLeft, Clock, History, Pencil, Languages } from "lucide-react";
+import { Bell, BellOff, Plus, Minus, ArrowLeft, Clock, History, Languages } from "lucide-react";
 import {
   registerPushNotifications,
   unregisterPushNotifications,
   isPushNotificationEnabled,
-  updateMealTime,
   updateQuietHours as syncQuietHours,
   updateLanguage as syncLanguage,
 } from "@/lib/push-notifications";
@@ -36,7 +37,6 @@ import { useMealTracker } from "@/hooks/use-meal-tracker";
 import { useLanguage } from "@/hooks/use-language";
 import { formatDateTime } from "@/lib/time-utils";
 import { TARGET_HOURS_CONFIG } from "@/lib/constants";
-import { supportsBadgeAPI } from "@/types/meal-tracker";
 import type { Language } from "@/lib/translations";
 
 /**
@@ -45,8 +45,9 @@ import type { Language } from "@/lib/translations";
  * Provides a comprehensive settings interface organized into cards:
  * 1. Notifications - Toggle push notifications
  * 2. Target Hours - Configure meal interval goal
- * 3. Edit Last Meal - Adjust timestamp of most recent meal
- * 4. History - View all tracked meals
+ * 3. Language - Select UI language (EN/DE/ES)
+ * 4. Quiet Hours - Configure notification-free time periods
+ * 5. History - View all tracked meals
  */
 export default function Settings() {
   // Meal tracking state from custom hook
@@ -100,10 +101,11 @@ export default function Settings() {
    * 
    * When user changes language, update the server-side subscription
    * so that future push notifications are sent in the correct language.
+   * 
+   * Note: This runs on every language change, including initial mount.
+   * The server endpoint is idempotent and handles this gracefully.
    */
   useEffect(() => {
-    // Skip on initial mount (no language change yet)
-    // Only sync when language actually changes
     syncLanguage(language).catch((error) => {
       console.error("Failed to sync language with server:", error);
     });
