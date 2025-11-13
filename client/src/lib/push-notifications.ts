@@ -29,10 +29,11 @@
  * @param lastMealTime - Optional timestamp of last meal (for immediate sync)
  * @param quietHoursStart - Optional quiet hours start (0-23)
  * @param quietHoursEnd - Optional quiet hours end (0-23)
+ * @param language - Optional language code ('en', 'de', 'es')
  * @returns Promise resolving to true if successful, false otherwise
  * 
  * @example
- * const success = await registerPushNotifications(Date.now(), 22, 8);
+ * const success = await registerPushNotifications(Date.now(), 22, 8, 'de');
  * if (success) {
  *   console.log("Push notifications enabled");
  * }
@@ -40,7 +41,8 @@
 export async function registerPushNotifications(
   lastMealTime?: number,
   quietHoursStart?: number,
-  quietHoursEnd?: number
+  quietHoursEnd?: number,
+  language?: string
 ): Promise<boolean> {
   // Check browser support
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -83,6 +85,7 @@ export async function registerPushNotifications(
         lastMealTime: lastMealTime ?? null,
         quietHoursStart: quietHoursStart ?? null,
         quietHoursEnd: quietHoursEnd ?? null,
+        language: language ?? 'en',
       }),
     });
 
@@ -125,6 +128,47 @@ export async function updateMealTime(lastMealTime: number): Promise<void> {
     }
   } catch (error) {
     console.error("Error updating meal time:", error);
+  }
+}
+
+/**
+ * Updates the user's language preference on the server
+ * 
+ * Synchronizes language preference with the server so that
+ * push notifications are sent in the correct language.
+ * 
+ * If no active subscription exists (notifications disabled), this is a no-op.
+ * The language will be sent to the server when notifications are re-enabled.
+ * 
+ * Called when:
+ * - User changes language in settings
+ * 
+ * @param language - Language code ('en', 'de', 'es')
+ * 
+ * @example
+ * await updateLanguage('de');
+ */
+export async function updateLanguage(language: string): Promise<void> {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    // No subscription exists (notifications disabled) - this is okay
+    // The language will be sent when notifications are re-enabled
+    if (!subscription) {
+      return;
+    }
+
+    await fetch("/api/push/update-meal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        endpoint: subscription.endpoint,
+        language,
+      }),
+    });
+  } catch (error) {
+    console.error("Error updating language:", error);
   }
 }
 

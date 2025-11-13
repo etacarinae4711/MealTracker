@@ -29,6 +29,7 @@ import {
   isPushNotificationEnabled,
   updateMealTime,
   updateQuietHours as syncQuietHours,
+  updateLanguage as syncLanguage,
 } from "@/lib/push-notifications";
 import { useToast } from "@/hooks/use-toast";
 import { useMealTracker } from "@/hooks/use-meal-tracker";
@@ -100,6 +101,20 @@ export default function Settings() {
   }, [targetHours]);
 
   /**
+   * Effect: Sync language preference with push notification server
+   * 
+   * When user changes language, update the server-side subscription
+   * so that future push notifications are sent in the correct language.
+   */
+  useEffect(() => {
+    // Skip on initial mount (no language change yet)
+    // Only sync when language actually changes
+    syncLanguage(language).catch((error) => {
+      console.error("Failed to sync language with server:", error);
+    });
+  }, [language]);
+
+  /**
    * Toggles push notifications on/off
    * 
    * Actions:
@@ -121,11 +136,12 @@ export default function Settings() {
         description: t.notificationsDisabledDescription,
       });
     } else {
-      // Enable notifications with current quiet hours settings
+      // Enable notifications with current quiet hours settings and language
       const success = await registerPushNotifications(
         lastMealTime || undefined,
         quietHoursStart,
-        quietHoursEnd
+        quietHoursEnd,
+        language
       );
       if (success) {
         setNotificationsEnabled(true);

@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { storage } from "./storage";
 import { sendPushNotification } from "./push-service";
 import type { PushSubscription } from "@shared/schema";
+import { getNotificationText } from "@shared/notifications";
 
 const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
@@ -121,9 +122,10 @@ export function startNotificationScheduler() {
         }
 
         console.log(`[3h Scheduler] Sending push to ${subscription.id.substring(0, 8)} - meal was ${hoursAgo}h ago`);
+        const notificationText = getNotificationText(subscription.language, hoursAgoRaw);
         const success = await sendPushNotification(subscription, {
-          title: "Mealtracker Erinnerung",
-          body: `Letzte Mahlzeit war vor ${hoursAgoRaw} Stunden`,
+          title: notificationText.title,
+          body: notificationText.body,
           icon: "/icon-192.png",
           badge: "/icon-192.png",
           badgeCount: hoursAgo,
@@ -141,59 +143,7 @@ export function startNotificationScheduler() {
     }
   });
 
-  cron.schedule("0 9 * * *", async () => {
-    try {
-      const subscriptions = await storage.getAllPushSubscriptions();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      console.log(`[Daily Reminder] Checking ${subscriptions.length} subscriptions at ${new Date().toISOString()}`);
-
-      for (const subscription of subscriptions) {
-        // Check quiet hours - skip audible notifications
-        if (isInQuietHours(subscription)) {
-          console.log(`[Daily Reminder] Skipping ${subscription.id.substring(0, 8)} - in quiet hours (${subscription.quietHoursStart}:00-${subscription.quietHoursEnd}:00)`);
-          continue;
-        }
-
-        const lastReminder = subscription.lastDailyReminder 
-          ? new Date(subscription.lastDailyReminder) 
-          : null;
-
-        if (lastReminder) {
-          const lastReminderDay = new Date(lastReminder);
-          lastReminderDay.setHours(0, 0, 0, 0);
-          
-          if (lastReminderDay >= today) {
-            console.log(`[Daily Reminder] Skipping ${subscription.id.substring(0, 8)} - already sent today`);
-            continue;
-          }
-        }
-
-        console.log(`[Daily Reminder] Sending to ${subscription.id.substring(0, 8)}`);
-        const success = await sendPushNotification(subscription, {
-          title: "Mealtracker",
-          body: "Hast du heute schon Meals getrackt?",
-          icon: "/icon-192.png",
-          badge: "/icon-192.png",
-        });
-
-        if (success) {
-          console.log(`[Daily Reminder] ✅ Sent successfully to ${subscription.id.substring(0, 8)}`);
-          await storage.updatePushSubscription(subscription.id, {
-            lastDailyReminder: new Date(),
-          });
-        } else {
-          console.log(`[Daily Reminder] ❌ Failed for ${subscription.id.substring(0, 8)}`);
-        }
-      }
-    } catch (error) {
-      console.error("Error in daily reminder scheduler:", error);
-    }
-  });
-
   console.log("✅ Notification schedulers started:");
   console.log("  - Hourly badge update: Every hour (silent push)");
   console.log("  - 3-hour reminder: Every 5 minutes");
-  console.log("  - Daily reminder: Every day at 9:00 AM");
 }

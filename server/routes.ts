@@ -16,9 +16,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endpoint: req.body.endpoint,
         keys: JSON.stringify(req.body.keys),
         lastMealTime: req.body.lastMealTime ?? null,
-        lastDailyReminder: null,
         quietHoursStart: req.body.quietHoursStart ?? null,
         quietHoursEnd: req.body.quietHoursEnd ?? null,
+        language: req.body.language ?? 'en',
       });
 
       const existing = await storage.getPushSubscriptionByEndpoint(validated.endpoint);
@@ -29,6 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastMealTime: validated.lastMealTime,
           quietHoursStart: validated.quietHoursStart,
           quietHoursEnd: validated.quietHoursEnd,
+          language: validated.language,
         });
         return res.json({ success: true, message: "Subscription updated" });
       }
@@ -58,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/push/update-meal", async (req, res) => {
     try {
-      const { endpoint, lastMealTime, quietHoursStart, quietHoursEnd } = req.body;
+      const { endpoint, lastMealTime, quietHoursStart, quietHoursEnd, language } = req.body;
       const subscription = await storage.getPushSubscriptionByEndpoint(endpoint);
       
       if (!subscription) {
@@ -70,6 +71,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate and add lastMealTime
       if (lastMealTime !== undefined) {
         updateData.lastMealTime = lastMealTime;
+      }
+      
+      // Validate and add language
+      if (language !== undefined) {
+        if (!['en', 'de', 'es'].includes(language)) {
+          return res.status(400).json({ error: "Language must be 'en', 'de', or 'es'" });
+        }
+        updateData.language = language;
       }
       
       // Validate quiet hours if provided

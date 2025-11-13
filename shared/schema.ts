@@ -22,15 +22,17 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   endpoint: text("endpoint").notNull().unique(),
   keys: text("keys").notNull(),
   lastMealTime: bigint("last_meal_time", { mode: "number" }),
-  lastDailyReminder: timestamp("last_daily_reminder"),
   quietHoursStart: integer("quiet_hours_start"),
   quietHoursEnd: integer("quiet_hours_end"),
+  language: text("language").default('en'),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 const basePushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({
   id: true,
   createdAt: true,
+}).extend({
+  language: z.enum(['en', 'de', 'es']).optional(),
 });
 
 export const insertPushSubscriptionSchema = basePushSubscriptionSchema.refine(
