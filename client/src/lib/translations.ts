@@ -128,8 +128,8 @@ export const translations: Record<Language, Translations> = {
     notificationsEnabled: 'Notifications enabled',
     notificationsDisabled: 'Notifications disabled',
     notificationsActive: 'Notifications active',
-    notificationsEnabledDescription: 'You will receive reminders after {hours}+ hours and daily reminders',
-    notificationsEnabledDetailDesc: 'You will receive reminders after {hours}+ hours and daily reminders at 9:00 AM',
+    notificationsEnabledDescription: 'You will receive reminders after {hours}+ hours without tracking a meal',
+    notificationsEnabledDetailDesc: 'Reminders trigger once you pass the {hours}-hour threshold and respect your quiet hours',
     notificationsDisabledDescription: 'You will no longer receive reminders',
     notificationsError: 'Could not enable notifications',
     
@@ -215,8 +215,8 @@ export const translations: Record<Language, Translations> = {
     notificationsEnabled: 'Benachrichtigungen aktiviert',
     notificationsDisabled: 'Benachrichtigungen deaktiviert',
     notificationsActive: 'Benachrichtigungen aktiv',
-    notificationsEnabledDescription: 'Sie erhalten Erinnerungen nach {hours}+ Stunden und tägliche Reminders',
-    notificationsEnabledDetailDesc: 'Sie erhalten Erinnerungen nach {hours}+ Stunden und tägliche Reminders um 9:00 Uhr',
+    notificationsEnabledDescription: 'Sie erhalten Erinnerungen, wenn {hours}+ Stunden seit Ihrer letzten Mahlzeit vergangen sind',
+    notificationsEnabledDetailDesc: 'Die Erinnerungen werden nach Überschreiten des {hours}-Stunden-Schwellenwerts gesendet und respektieren Ihre Ruhezeiten',
     notificationsDisabledDescription: 'Sie erhalten keine Erinnerungen mehr',
     notificationsError: 'Benachrichtigungen konnten nicht aktiviert werden',
     
@@ -302,8 +302,8 @@ export const translations: Record<Language, Translations> = {
     notificationsEnabled: 'Notificaciones activadas',
     notificationsDisabled: 'Notificaciones desactivadas',
     notificationsActive: 'Notificaciones activas',
-    notificationsEnabledDescription: 'Recibirás recordatorios después de {hours}+ horas y recordatorios diarios',
-    notificationsEnabledDetailDesc: 'Recibirás recordatorios después de {hours}+ horas y recordatorios diarios a las 9:00',
+    notificationsEnabledDescription: 'Recibirás recordatorios después de {hours}+ horas sin registrar una comida',
+    notificationsEnabledDetailDesc: 'Los recordatorios se enviarán al superar el umbral de {hours} horas y respetan tus horas de silencio',
     notificationsDisabledDescription: 'Ya no recibirás recordatorios',
     notificationsError: 'No se pudieron activar las notificaciones',
     
