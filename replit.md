@@ -8,6 +8,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-11-13: Push Notification Localization & Language Synchronization
+- **Complete Push Notification Internationalization**:
+  - Created shared translation system (`shared/notifications.ts`) supporting EN/DE/ES for all notification content
+  - Extended database schema: Added `language` field to `push_subscriptions` table with 'en' default
+  - Removed obsolete `last_daily_reminder` column from database schema
+  - All 3-hour reminder notifications now sent in user's selected language
+- **Daily Reminder Removal**:
+  - Removed unwanted daily 9 AM reminder notification as requested
+  - Notification system now has two cron jobs: hourly badge update + 3-hour reminders
+- **Automatic Language Synchronization**:
+  - Implemented `updateLanguage()` function in `push-notifications.ts`
+  - Added useEffect hook in `settings.tsx` to sync language changes to server
+  - Push notification language automatically updates when user changes UI language
+  - Robust fallback handling: invalid/null language values default to English
+- **Database Migration**:
+  - Generated fresh migration (`0000_shallow_wallow.sql`) without `last_daily_reminder` column
+  - Schema aligned with TypeScript definitions for type safety
+  - All existing subscriptions migrated to default English language
+
 ### 2025-11-12: Settings Page UI Optimization
 - **Target Hours Configuration Compacted**:
   - Display size reduced: text-6xl (60px) → text-4xl (36px) for better balance
@@ -54,7 +73,7 @@ Preferred communication style: Simple, everyday language.
 - **Home Page**: "Track Meal" button, real-time timer display (updates every second, color-coded), progress bar, PWA badge updates, auto-registers push notifications.
 - **Settings Page**: Card-based layout with sections for: Edit Last Meal, Push Notifications (with permission handling), Target Hours, Quiet Hours (select dropdowns), Language, and History. Toast feedback for actions and full validation with translated error messages.
 - **Internationalization**: Complete multilingual support (English, German, Spanish) with all UI text sourced from `translations.ts`. Instant language switching.
-- **Push Notifications**: Configurable target-hour reminders, daily morning reminders, and hourly PWA badge updates, respecting user-defined quiet hours.
+- **Push Notifications**: Fully localized (EN/DE/ES) configurable target-hour reminders and hourly PWA badge updates, respecting user-defined quiet hours. Notification language automatically syncs with UI language preference.
 
 ### System Design Choices
 - **Internationalization Architecture**: Uses `translations.ts` as a single source of truth, `LanguageProvider` context, and `useLanguage()` hook for dynamic translation.
@@ -66,7 +85,7 @@ Preferred communication style: Simple, everyday language.
     - **Server-side (PostgreSQL via Drizzle ORM)**: Persists push subscription data for background notification scheduling.
     - **In-memory (MemStorage)**: Placeholder for future authentication.
 - **API Structure**: RESTful endpoints (`/api/push/*`) for push notification management with Zod schema validation.
-- **Notification Services**: Three cron jobs (hourly badge, target-hour reminders, daily reminders) handled by `notification-scheduler.ts`.
+- **Notification Services**: Two cron jobs (hourly badge update, 3-hour target-hour reminders with full i18n) handled by `notification-scheduler.ts`. Uses shared translation system (`shared/notifications.ts`) for localized notification content.
 - **Theming & Styling**: Tailwind CSS with custom design tokens, Apple HIG-inspired minimalist design, mobile-first responsive. No emojis in UI.
 
 ## External Dependencies
