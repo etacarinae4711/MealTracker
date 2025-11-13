@@ -13,6 +13,8 @@ Preferred communication style: Simple, everyday language.
   - Created shared translation system (`shared/notifications.ts`) supporting EN/DE/ES for all notification content
   - Extended database schema: Added `language` field to `push_subscriptions` table with 'en' default
   - Removed obsolete `last_daily_reminder` column from database schema
+  - Updated `/api/push/*` endpoints to accept, validate, and store language preference
+  - Client-side push registration now sends current UI language during subscription creation
   - All 3-hour reminder notifications now sent in user's selected language
 - **Daily Reminder Removal**:
   - Removed unwanted daily 9 AM reminder notification as requested
