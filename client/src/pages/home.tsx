@@ -6,10 +6,15 @@
  * - Real-time timer display showing elapsed time since last meal
  * - Visual progress indicator (red when under target, green when reached)
  * - Progress bar showing percentage towards target goal
+ * - Elegant glassmorphic "Edit Last Meal" card with quick-edit dialog
  * - Quick access to settings via icon button
  * 
  * The component automatically updates every second to show elapsed time
  * and manages the PWA app badge to display hours since last meal.
+ * 
+ * Edit functionality: Users can modify the last meal timestamp via an
+ * inline glassmorphic card that appears below the timer. The edit dialog
+ * syncs changes with both localStorage and the notification server.
  * 
  * @module pages/home
  */
@@ -61,7 +66,13 @@ export default function Home() {
   // Local UI state for elapsed time (updated every second)
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   
-  // Edit dialog state
+  /**
+   * Edit dialog state
+   * 
+   * Date and time are stored as strings (not Date objects) to maintain
+   * compatibility with HTML5 date/time input controls, which expect
+   * "YYYY-MM-DD" and "HH:MM" string formats.
+   */
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
@@ -346,7 +357,15 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Edit Last Meal - Elegant glassmorphic card */}
+            {/* 
+              Edit Last Meal Card - Entry point to edit dialog
+              
+              Glassmorphic card design with translucent background and backdrop blur.
+              Appears only when a meal has been tracked. Clicking "Change Time" button
+              opens the edit dialog (handleEditMeal), which allows users to modify the
+              last meal timestamp. Changes are saved via handleSaveEdit and synced with
+              both localStorage and the notification server for PWA badge updates.
+            */}
             <Card 
               className="overflow-visible bg-card/80 backdrop-blur-md border-border/60 rounded-xl animate-in fade-in-50 slide-in-from-bottom-4 duration-500"
               data-testid="card-edit-last-meal"
