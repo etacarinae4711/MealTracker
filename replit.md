@@ -8,6 +8,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-11-13: Edit Last Meal Moved to Home Page with Innovative Glassmorphic Design
+- **UI/UX Enhancement**:
+  - Moved "Edit Last Meal" functionality from Settings page to Home page for better accessibility
+  - Implemented elegant glassmorphic card design with translucent background and backdrop-blur effect
+  - Card positioned directly below timer display, only visible when meal has been tracked
+  - Features: Pencil icon in muted circle, formatted timestamp display, "Change Time" button
+  - Smooth fade-in and slide-in animation on first render
+  - Maintains all existing functionality: date/time picker dialog, badge sync, notification sync, toast feedback
+- **Settings Page Simplification**:
+  - Removed "Edit Last Meal" card from settings page
+  - Settings now focused on configuration: Push Notifications, Target Hours, Quiet Hours, Language, History
+- **Improved User Flow**:
+  - Edit functionality now accessible directly on main screen without navigation
+  - Reduces clicks needed to modify last meal time
+  - More intuitive placement for mobile-first design
+
 ### 2025-11-13: Push Notification Localization & Language Synchronization
 - **Complete Push Notification Internationalization**:
   - Created shared translation system (`shared/notifications.ts`) supporting EN/DE/ES for all notification content
@@ -72,8 +88,8 @@ Preferred communication style: Simple, everyday language.
 - **Build & Development**: TypeScript 5.6+, Vite 5.4+, ESBuild, Tailwind CSS 4.1+.
 
 ### Feature Specifications
-- **Home Page**: "Track Meal" button, real-time timer display (updates every second, color-coded), progress bar, PWA badge updates, auto-registers push notifications.
-- **Settings Page**: Card-based layout with sections for: Edit Last Meal, Push Notifications (with permission handling), Target Hours, Quiet Hours (select dropdowns), Language, and History. Toast feedback for actions and full validation with translated error messages.
+- **Home Page**: "Track Meal" button, real-time timer display (updates every second, color-coded), progress bar, PWA badge updates, auto-registers push notifications. Elegant glassmorphic "Edit Last Meal" card (shown when meal tracked) with timestamp display and quick-edit dialog access.
+- **Settings Page**: Card-based layout with sections for: Push Notifications (with permission handling), Target Hours, Quiet Hours (select dropdowns), Language, and History. Toast feedback for actions and full validation with translated error messages.
 - **Internationalization**: Complete multilingual support (English, German, Spanish) with all UI text sourced from `translations.ts`. Instant language switching.
 - **Push Notifications**: Fully localized (EN/DE/ES) configurable target-hour reminders and hourly PWA badge updates, respecting user-defined quiet hours. Notification language automatically syncs with UI language preference.
 
