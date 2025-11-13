@@ -72,11 +72,6 @@ export default function Settings() {
   
   // Dialog state
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  
-  // Edit form state
-  const [editDate, setEditDate] = useState("");
-  const [editTime, setEditTime] = useState("");
   
   const { toast } = useToast();
 
@@ -268,76 +263,6 @@ export default function Settings() {
     });
   };
 
-  /**
-   * Opens the edit dialog with current meal time
-   * 
-   * Populates the date and time inputs with the last meal's timestamp.
-   * Shows error if no meal has been tracked yet.
-   */
-  const handleEditMeal = () => {
-    if (lastMealTime) {
-      const date = new Date(lastMealTime);
-      const dateStr = date.toISOString().split("T")[0];
-      const timeStr = date.toTimeString().split(" ")[0].substring(0, 5);
-      setEditDate(dateStr);
-      setEditTime(timeStr);
-      setIsEditDialogOpen(true);
-    } else {
-      toast({
-        title: t.noMealYet,
-        description: t.noMealYetDesc,
-        variant: "destructive",
-      });
-    }
-  };
-
-  /**
-   * Saves the edited meal time
-   * 
-   * Actions performed:
-   * 1. Combines date and time inputs into timestamp
-   * 2. Updates last meal time via hook (persists to localStorage and history)
-   * 3. Updates app badge with new hours count
-   * 4. If notifications enabled, syncs with server
-   * 
-   * Side effects:
-   * - Updates localStorage (via hook)
-   * - Updates app badge
-   * - May trigger server API call
-   * - Shows toast notification
-   */
-  const handleSaveEdit = async () => {
-    if (editDate && editTime) {
-      // Combine date and time into timestamp
-      const dateTimeStr = `${editDate}T${editTime}:00`;
-      const newTime = new Date(dateTimeStr).getTime();
-      
-      // Update via hook (persists to localStorage and history)
-      updateLastMealTime(newTime);
-
-      // Update badge with new hours count
-      if (supportsBadgeAPI(navigator)) {
-        try {
-          const hoursAgo = Math.floor((Date.now() - newTime) / (60 * 60 * 1000));
-          await navigator.setAppBadge(hoursAgo);
-        } catch (error) {
-          console.log('Failed to update badge:', error);
-        }
-      }
-
-      // Sync with server if notifications enabled
-      if (notificationsEnabled) {
-        await updateMealTime(newTime);
-      }
-
-      setIsEditDialogOpen(false);
-      toast({
-        title: t.success,
-        description: t.editLastMeal,
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto p-6 space-y-8">
@@ -353,38 +278,6 @@ export default function Settings() {
             <p className="text-sm text-muted-foreground">{t.settingsDescription}</p>
           </div>
         </div>
-
-        {/* Edit Last Meal Card - MOVED TO TOP - only shown when meal exists */}
-        {lastMealTime && (
-          <Card data-testid="card-edit-meal">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Pencil className="h-5 w-5" />
-                {t.editLastMeal}
-              </CardTitle>
-              <CardDescription>
-                {t.editLastMealDesc}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="text-sm">
-                  <span className="text-muted-foreground">{t.lastMeal}: </span>
-                  <span className="font-medium">{formatDateTime(lastMealTime)}</span>
-                </div>
-                <Button
-                  onClick={handleEditMeal}
-                  variant="outline"
-                  className="w-full"
-                  data-testid="button-edit-meal"
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  {t.changeTime}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Notifications Card */}
         <Card data-testid="card-notifications">
@@ -595,52 +488,6 @@ export default function Settings() {
             </Button>
           </CardContent>
         </Card>
-
-        {/* Edit Meal Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent data-testid="dialog-edit-meal">
-            <DialogHeader>
-              <DialogTitle>{t.editLastMeal}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-date">{t.date}</Label>
-                <Input
-                  id="edit-date"
-                  type="date"
-                  value={editDate}
-                  onChange={(e) => setEditDate(e.target.value)}
-                  data-testid="input-edit-date"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-time">{t.time}</Label>
-                <Input
-                  id="edit-time"
-                  type="time"
-                  value={editTime}
-                  onChange={(e) => setEditTime(e.target.value)}
-                  data-testid="input-edit-time"
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditDialogOpen(false)}
-                  data-testid="button-cancel-edit"
-                >
-                  {t.cancel}
-                </Button>
-                <Button
-                  onClick={handleSaveEdit}
-                  data-testid="button-save-edit"
-                >
-                  {t.save}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {/* History Dialog */}
         <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>

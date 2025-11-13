@@ -17,7 +17,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Utensils, Settings as SettingsIcon } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Utensils, Settings as SettingsIcon, Pencil } from "lucide-react";
 import {
   isPushNotificationEnabled,
   updateMealTime,
@@ -25,12 +29,14 @@ import {
 } from "@/lib/push-notifications";
 import { useMealTracker } from "@/hooks/use-meal-tracker";
 import { useLanguage } from "@/hooks/use-language";
+import { useToast } from "@/hooks/use-toast";
 import {
   formatElapsedTime,
   calculateElapsedTime,
   getHoursAndMinutes,
   calculateProgress,
   millisecondsToHours,
+  formatDateTime,
 } from "@/lib/time-utils";
 import { BADGE_CONFIG, TIMER_CONFIG, TIME, TARGET_HOURS_CONFIG } from "@/lib/constants";
 import { supportsBadgeAPI } from "@/types/meal-tracker";
@@ -44,13 +50,21 @@ import { supportsBadgeAPI } from "@/types/meal-tracker";
  */
 export default function Home() {
   // Meal tracking state managed by custom hook
-  const { lastMealTime, trackMeal, targetHours } = useMealTracker();
+  const { lastMealTime, trackMeal, targetHours, updateLastMealTime } = useMealTracker();
   
   // Language support
   const { t } = useLanguage();
   
+  // Toast notifications
+  const { toast } = useToast();
+  
   // Local UI state for elapsed time (updated every second)
   const [elapsedTime, setElapsedTime] = useState<number>(0);
+  
+  // Edit dialog state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
 
   /**
    * Effect: Update elapsed time display
@@ -160,6 +174,78 @@ export default function Home() {
     }
   };
 
+  /**
+   * Opens the edit dialog with current meal time
+   * 
+   * Populates the date and time inputs with the last meal's timestamp.
+   * Shows error if no meal has been tracked yet.
+   */
+  const handleEditMeal = () => {
+    if (lastMealTime) {
+      const date = new Date(lastMealTime);
+      const dateStr = date.toISOString().split("T")[0];
+      const timeStr = date.toTimeString().split(" ")[0].substring(0, 5);
+      setEditDate(dateStr);
+      setEditTime(timeStr);
+      setIsEditDialogOpen(true);
+    } else {
+      toast({
+        title: t.noMealYet,
+        description: t.noMealYetDesc,
+        variant: "destructive",
+      });
+    }
+  };
+
+  /**
+   * Saves the edited meal time
+   * 
+   * Actions performed:
+   * 1. Combines date and time inputs into timestamp
+   * 2. Updates last meal time via hook (persists to localStorage and history)
+   * 3. Updates app badge with new hours count
+   * 4. If notifications enabled, syncs with server
+   * 
+   * Side effects:
+   * - Updates localStorage (via hook)
+   * - Updates app badge
+   * - May trigger server API call
+   * - Shows toast notification
+   */
+  const handleSaveEdit = async () => {
+    if (editDate && editTime) {
+      // Combine date and time into timestamp
+      const dateTimeStr = `${editDate}T${editTime}:00`;
+      const newTime = new Date(dateTimeStr).getTime();
+      
+      // Update via hook (persists to localStorage and history)
+      updateLastMealTime(newTime);
+
+      // Update badge with new hours count
+      if (supportsBadgeAPI(navigator)) {
+        try {
+          const hoursAgo = Math.floor((Date.now() - newTime) / (60 * 60 * 1000));
+          await navigator.setAppBadge(hoursAgo);
+        } catch (error) {
+          console.log('Failed to update badge:', error);
+        }
+      }
+
+      // Sync with server if notifications enabled
+      const isEnabled = await isPushNotificationEnabled();
+      if (isEnabled) {
+        await updateMealTime(newTime);
+        await resetBadge();
+      }
+
+      setIsEditDialogOpen(false);
+      toast({
+        title: t.success,
+        description: t.editLastMeal,
+      });
+    }
+  };
+
   // Calculate progress and visual state
   // Clamp target hours to valid range for safety
   const safeTargetHours = Math.max(
@@ -259,6 +345,44 @@ export default function Home() {
                 </p>
               </div>
             </div>
+
+            {/* Edit Last Meal - Elegant glassmorphic card */}
+            <Card 
+              className="overflow-visible bg-card/80 backdrop-blur-md border-border/60 rounded-xl animate-in fade-in-50 slide-in-from-bottom-4 duration-500"
+              data-testid="card-edit-last-meal"
+            >
+              <div className="flex items-center gap-3 p-4">
+                {/* Icon with subtle circle background */}
+                <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-muted/50">
+                  <Pencil className="h-4 w-4 text-muted-foreground" />
+                </div>
+                
+                {/* Timestamp display */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">
+                    {t.lastMeal}
+                  </p>
+                  <p className="text-sm font-semibold text-foreground truncate" data-testid="text-last-meal">
+                    {formatDateTime(lastMealTime)}
+                  </p>
+                </div>
+                
+                {/* Edit button */}
+                <Button
+                  onClick={handleEditMeal}
+                  variant="outline"
+                  size="sm"
+                  className="flex-shrink-0"
+                  data-testid="button-edit-last-meal"
+                  aria-describedby="edit-meal-helper"
+                >
+                  {t.changeTime}
+                </Button>
+                <span id="edit-meal-helper" className="sr-only">
+                  {t.editLastMealDesc}
+                </span>
+              </div>
+            </Card>
           </div>
         )}
 
@@ -277,6 +401,52 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Edit Meal Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent data-testid="dialog-edit-meal">
+          <DialogHeader>
+            <DialogTitle>{t.editLastMeal}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-date">{t.date}</Label>
+              <Input
+                id="edit-date"
+                type="date"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                data-testid="input-edit-date"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-time">{t.time}</Label>
+              <Input
+                id="edit-time"
+                type="time"
+                value={editTime}
+                onChange={(e) => setEditTime(e.target.value)}
+                data-testid="input-edit-time"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                data-testid="button-cancel-edit"
+              >
+                {t.cancel}
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                data-testid="button-save-edit"
+              >
+                {t.save}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
