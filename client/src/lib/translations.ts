@@ -220,7 +220,7 @@ export const translations: Record<Language, Translations> = {
     notificationsDisabledDescription: 'Sie erhalten keine Erinnerungen mehr',
     notificationsError: 'Benachrichtigungen konnten nicht aktiviert werden',
     
-    minimumMealInterval: 'Zielzeit zwischen zwei Mahlzeiten',
+    minimumMealInterval: 'Angestrebte mindest Zielzeit zwischen zwei Mahlzeiten',
     minimumMealIntervalDesc: 'Nach wie vielen Stunden möchten Sie erinnert werden?',
     minimumMealIntervalValidation: 'Bitte geben Sie eine Zahl zwischen {min} und {max} ein',
     minimumMealIntervalRange: 'Wählen Sie zwischen {min} und {max} Stunden',
