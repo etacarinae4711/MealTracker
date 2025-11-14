@@ -1,3 +1,18 @@
+/**
+ * Toast Notification Hook
+ * 
+ * Provides a simple API to display temporary notification messages.
+ * Supports success, error, and custom toast notifications.
+ * 
+ * Features:
+ * - Auto-dismiss after timeout
+ * - Manual dismiss capability
+ * - Single toast displayed at a time (configurable limit)
+ * - Toast action buttons support
+ * 
+ * @module use-toast
+ */
+
 import * as React from "react"
 
 import type {
@@ -8,6 +23,9 @@ import type {
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
 
+/**
+ * Internal toast object with all display properties
+ */
 type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
@@ -24,6 +42,9 @@ const actionTypes = {
 
 let count = 0
 
+/**
+ * Generates unique IDs for toast notifications
+ */
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   return count.toString()
@@ -139,6 +160,29 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
+/**
+ * Creates and displays a new toast notification
+ * 
+ * @param {Toast} props - Toast configuration
+ * @param {string} [props.title] - Toast title
+ * @param {string} [props.description] - Toast message
+ * @param {string} [props.variant] - 'default' | 'destructive'
+ * @param {ToastActionElement} [props.action] - Optional action button
+ * 
+ * @returns Object with methods to control the toast
+ * @returns {string} return.id - Unique toast identifier
+ * @returns {Function} return.dismiss - Function to dismiss the toast
+ * @returns {Function} return.update - Function to update toast properties
+ * 
+ * @example
+ * const { toast } = useToast();
+ * 
+ * toast({
+ *   title: "Success",
+ *   description: "Meal tracked!",
+ *   variant: "default"
+ * });
+ */
 function toast({ ...props }: Toast) {
   const id = genId()
 
@@ -168,6 +212,34 @@ function toast({ ...props }: Toast) {
   }
 }
 
+/**
+ * Hook for displaying toast notifications
+ * 
+ * Provides the `toast` function to show notifications in the application.
+ * 
+ * @returns {Object} Hook interface
+ * @returns {Function} return.toast - Function to display a new toast
+ * 
+ * @throws {Error} Must be used within a component wrapped by Toaster component
+ * 
+ * @example
+ * import { useToast } from '@/hooks/use-toast';
+ * 
+ * function MyComponent() {
+ *   const { toast } = useToast();
+ *   
+ *   return (
+ *     <button onClick={() => {
+ *       toast({
+ *         title: "Copied!",
+ *         description: "Text copied to clipboard"
+ *       });
+ *     }}>
+ *       Copy
+ *     </button>
+ *   );
+ * }
+ */
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 

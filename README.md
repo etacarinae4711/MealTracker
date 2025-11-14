@@ -42,6 +42,57 @@ npm run build
 npm run start
 ```
 
+## 🔑 Umgebungsvariablen (Environment Variables)
+
+Die Anwendung benötigt die folgenden Umgebungsvariablen. Erstellen Sie eine `.env`-Datei im Projekthauptverzeichnis:
+
+```bash
+# Datenbank (PostgreSQL via Neon)
+DATABASE_URL=postgresql://user:password@host/database
+
+# Push Notifications - VAPID Keys
+# Generieren Sie diese mit: npx web-push generate-vapid-keys
+VAPID_PUBLIC_KEY=your_public_key_here
+VAPID_PRIVATE_KEY=your_private_key_here
+
+# Optional: Port (Standard: 5000)
+PORT=5000
+
+# Node Environment
+NODE_ENV=development
+```
+
+### VAPID Keys generieren
+
+Falls Sie noch keine VAPID Keys haben:
+
+```bash
+# Installieren Sie web-push global
+npm install -g web-push
+
+# Generieren Sie neue Keys
+npx web-push generate-vapid-keys
+
+# Kopieren Sie die Keys in Ihre .env Datei
+```
+
+Siehe auch `.env.example` für ein Vorlage-Template.
+
+**Sicherheit**: 
+- ⚠️ **Niemals** VAPID_PRIVATE_KEY in Git commiten!
+- `.env` sollte in `.gitignore` eingetragen sein
+- In Production: Environment Variables über Hosting-Plattform (z.B. Azure, Replit) setzen
+
+## 📖 API-Dokumentation
+
+Siehe [API.md](./API.md) für vollständige Dokumentation aller Server-Endpoints.
+
+Die Anwendung stellt folgende API-Endpoints bereit:
+- `GET /api/push/vapid-public-key` - VAPID Public Key abrufen
+- `POST /api/push/subscribe` - Device für Push-Benachrichtigungen registrieren
+- `DELETE /api/push/unsubscribe` - Device abmelden
+- `POST /api/push/update-meal` - Mahlzeitszeit aktualisieren
+
 ## 📱 Als App auf dem Smartphone installieren
 
 Die Mealtracker-App ist eine Progressive Web App (PWA) und kann wie eine native App installiert werden:
