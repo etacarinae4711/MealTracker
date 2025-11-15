@@ -15,11 +15,20 @@ export interface IStorage {
   deletePushSubscription(endpoint: string): Promise<void>;
 }
 
+/**
+ * In-memory implementation for local development.
+ *
+ * If `process.env.DATABASE_URL` is set, the class delegates push-related
+ * operations to the configured database (Drizzle). If not, it stores
+ * push subscriptions in-memory so the app can run without a real DB.
+ */
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
+  private pushSubs: Map<string, PushSubscription>;
 
   constructor() {
     this.users = new Map();
+    this.pushSubs = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -40,31 +49,59 @@ export class MemStorage implements IStorage {
   }
 
   async createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription> {
-    const [result] = await db.insert(pushSubscriptions).values(subscription).returning();
-    return result;
+    if (process.env.DATABASE_URL) {
+      const [result] = await db.insert(pushSubscriptions).values(subscription).returning();
+      return result;
+    }
+
+    const id = randomUUID();
+    const created: PushSubscription = { ...subscription, id } as unknown as PushSubscription;
+    this.pushSubs.set(created.endpoint, created);
+    return created;
   }
 
   async updatePushSubscription(id: string, data: Partial<InsertPushSubscription>): Promise<PushSubscription | undefined> {
-    const [result] = await db.update(pushSubscriptions)
-      .set(data)
-      .where(eq(pushSubscriptions.id, id))
-      .returning();
-    return result;
+    if (process.env.DATABASE_URL) {
+      const [result] = await db.update(pushSubscriptions)
+        .set(data)
+        .where(eq(pushSubscriptions.id, id))
+        .returning();
+      return result;
+    }
+
+    const item = Array.from(this.pushSubs.values()).find((s) => s.id === id);
+    if (!item) return undefined;
+    const updated = { ...item, ...data } as PushSubscription;
+    this.pushSubs.set(updated.endpoint, updated);
+    return updated;
   }
 
   async getPushSubscriptionByEndpoint(endpoint: string): Promise<PushSubscription | undefined> {
-    const [result] = await db.select()
-      .from(pushSubscriptions)
-      .where(eq(pushSubscriptions.endpoint, endpoint));
-    return result;
+    if (process.env.DATABASE_URL) {
+      const [result] = await db.select()
+        .from(pushSubscriptions)
+        .where(eq(pushSubscriptions.endpoint, endpoint));
+      return result;
+    }
+
+    return this.pushSubs.get(endpoint);
   }
 
   async getAllPushSubscriptions(): Promise<PushSubscription[]> {
-    return await db.select().from(pushSubscriptions);
+    if (process.env.DATABASE_URL) {
+      return await db.select().from(pushSubscriptions);
+    }
+
+    return Array.from(this.pushSubs.values());
   }
 
   async deletePushSubscription(endpoint: string): Promise<void> {
-    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+    if (process.env.DATABASE_URL) {
+      await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+      return;
+    }
+
+    this.pushSubs.delete(endpoint);
   }
 }
 
