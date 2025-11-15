@@ -67,17 +67,26 @@ export function startNotificationScheduler() {
         const hoursAgo = Math.min(Math.floor(timeSinceLastMeal / (60 * 60 * 1000)), 99);
         
         console.log(`[Hourly Badge] Sending badge ${hoursAgo} to ${subscription.id.substring(0, 8)}`);
-        const success = await sendPushNotification(subscription, {
-          title: "",
-          body: "",
-          silent: true,
-          badgeCount: hoursAgo,
-        });
+        try {
+          const success = await sendPushNotification(subscription, {
+            title: "",
+            body: "",
+            silent: true,
+            badgeCount: hoursAgo,
+          });
 
-        if (success) {
-          console.log(`[Hourly Badge] ✅ Badge updated to ${hoursAgo} for ${subscription.id.substring(0, 8)}`);
-        } else {
-          console.log(`[Hourly Badge] ❌ Badge update failed for ${subscription.id.substring(0, 8)}`);
+          if (success) {
+            console.log(`[Hourly Badge] ✅ Badge updated to ${hoursAgo} for ${subscription.id.substring(0, 8)}`);
+          } else {
+            console.log(`[Hourly Badge] ❌ Badge update failed for ${subscription.id.substring(0, 8)}`);
+          }
+        } catch (error: any) {
+          if (error.statusCode === 410) {
+            console.log(`[Hourly Badge] 🗑️  Deleting expired subscription ${subscription.id.substring(0, 8)}`);
+            await storage.deletePushSubscription(subscription.endpoint);
+          } else {
+            console.error(`[Hourly Badge] Error for ${subscription.id.substring(0, 8)}:`, error);
+          }
         }
       }
     } catch (error) {
@@ -123,19 +132,28 @@ export function startNotificationScheduler() {
 
         console.log(`[3h Scheduler] Sending push to ${subscription.id.substring(0, 8)} - meal was ${hoursAgo}h ago`);
         const notificationText = getNotificationText(subscription.language, hoursAgoRaw);
-        const success = await sendPushNotification(subscription, {
-          title: notificationText.title,
-          body: notificationText.body,
-          icon: "/icon-192.png",
-          badge: "/icon-192.png",
-          badgeCount: hoursAgo,
-        });
+        try {
+          const success = await sendPushNotification(subscription, {
+            title: notificationText.title,
+            body: notificationText.body,
+            icon: "/icon-192.png",
+            badge: "/icon-192.png",
+            badgeCount: hoursAgo,
+          });
 
-        if (success) {
-          console.log(`[3h Scheduler] ✅ Push sent successfully to ${subscription.id.substring(0, 8)}`);
-          lastNotificationSent.set(subscription.id, now);
-        } else {
-          console.log(`[3h Scheduler] ❌ Push failed for ${subscription.id.substring(0, 8)}`);
+          if (success) {
+            console.log(`[3h Scheduler] ✅ Push sent successfully to ${subscription.id.substring(0, 8)}`);
+            lastNotificationSent.set(subscription.id, now);
+          } else {
+            console.log(`[3h Scheduler] ❌ Push failed for ${subscription.id.substring(0, 8)}`);
+          }
+        } catch (error: any) {
+          if (error.statusCode === 410) {
+            console.log(`[3h Scheduler] 🗑️  Deleting expired subscription ${subscription.id.substring(0, 8)}`);
+            await storage.deletePushSubscription(subscription.endpoint);
+          } else {
+            console.error(`[3h Scheduler] Error for ${subscription.id.substring(0, 8)}:`, error);
+          }
         }
       }
     } catch (error) {

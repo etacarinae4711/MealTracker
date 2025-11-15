@@ -77,7 +77,12 @@ export async function sendPushNotification(
     );
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
+    // If subscription expired (410 Gone), throw error so caller can clean up
+    if (error.statusCode === 410) {
+      console.warn(`Push subscription expired (410): ${subscription.endpoint.substring(0, 50)}...`);
+      throw error; // Re-throw so scheduler can delete the subscription
+    }
     console.error("Error sending push notification:", error);
     return false;
   }
