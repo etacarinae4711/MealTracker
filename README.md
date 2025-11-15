@@ -32,6 +32,11 @@ npm run dev
 http://localhost:5000
 ```
 
+Hinweis zur lokalen Entwicklung:
+
+- **DB‑Fallback (development)**: Wenn `DATABASE_URL` nicht gesetzt ist und `NODE_ENV=development`, startet der Server mit einem leichten In‑Memory‑Fallback (keine persistente Speicherung). Dies ermöglicht lokales Testen ohne Datenbank, aber Daten gehen bei Neustart verloren.
+- **Push Notifications**: Push‑Funktionen funktionieren nur, wenn `VAPID_PUBLIC_KEY` und `VAPID_PRIVATE_KEY` gesetzt sind. Ohne diese Keys werden Benachrichtigungen nicht versendet.
+
 ## Produktion Build
 
 ```bash
