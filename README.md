@@ -158,4 +158,8 @@ mealtracker/
 
 ## Lizenz
 
-MIT
+MIT License
+
+Copyright (c) 2025 Bjoern Boder, 91207 Lauf, Germany
+
+Siehe [LICENSE](./LICENSE) für den vollständigen Lizenztext.
