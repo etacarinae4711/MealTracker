@@ -1,5 +1,9 @@
 # Mealtracker
 
+![License](https://img.shields.io/github/license/etacarinae4711/MealTracker)
+![GitHub release](https://img.shields.io/github/v/release/etacarinae4711/MealTracker)
+![GitHub top language](https://img.shields.io/github/languages/top/etacarinae4711/MealTracker)
+
 Eine einfache Web-Anwendung zum Tracken der Zeit seit der letzten Mahlzeit.
 
 ## Features
